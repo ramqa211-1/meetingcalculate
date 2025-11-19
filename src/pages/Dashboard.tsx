@@ -27,6 +27,7 @@ interface Event {
 const Dashboard = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -61,6 +62,15 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEditEvent = (event: Event) => {
+    setEditingEvent(event);
+  };
+
+  const handleEditComplete = () => {
+    setEditingEvent(null);
+    fetchEvents();
   };
 
   const handleDeleteEvent = async (id: string) => {
@@ -131,6 +141,11 @@ const Dashboard = () => {
             </p>
           </div>
           <AddEventDialog onEventAdded={fetchEvents} />
+          <AddEventDialog 
+            editEvent={editingEvent} 
+            onEditComplete={handleEditComplete}
+            onEventAdded={fetchEvents}
+          />
         </div>
 
         {/* KPIs */}
@@ -170,7 +185,7 @@ const Dashboard = () => {
           <h2 className="text-2xl font-bold text-foreground">פגישות אחרונות</h2>
           <EventsTable
             events={events}
-            onEdit={(event) => console.log('Edit event:', event)}
+            onEdit={handleEditEvent}
             onDelete={handleDeleteEvent}
           />
         </div>
