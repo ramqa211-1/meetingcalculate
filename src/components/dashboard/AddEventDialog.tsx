@@ -45,17 +45,46 @@ const eventSchema = z.object({
 
 type EventFormData = z.infer<typeof eventSchema>;
 
-interface AddEventDialogProps {
-  onEventAdded: () => void;
+interface Event {
+  id: string;
+  date: string;
+  start_time: string;
+  duration_hours: number;
+  client_name: string;
+  event_type: string;
+  rate_type: string;
+  rate: number;
+  total_amount: number;
+  payment_status: string;
+  source: string;
+  notes?: string;
+  tags?: string[];
 }
 
-const AddEventDialog = ({ onEventAdded }: AddEventDialogProps) => {
+interface AddEventDialogProps {
+  onEventAdded: () => void;
+  editEvent?: Event | null;
+  onEditComplete?: () => void;
+}
+
+const AddEventDialog = ({ onEventAdded, editEvent, onEditComplete }: AddEventDialogProps) => {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
+  const isEditMode = !!editEvent;
 
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventSchema),
-    defaultValues: {
+    defaultValues: editEvent ? {
+      date: editEvent.date,
+      start_time: editEvent.start_time,
+      duration_hours: editEvent.duration_hours.toString(),
+      client_name: editEvent.client_name,
+      event_type: editEvent.event_type,
+      rate_type: editEvent.rate_type as 'hourly' | 'fixed',
+      rate: editEvent.rate.toString(),
+      payment_status: editEvent.payment_status as 'paid' | 'unpaid',
+      notes: editEvent.notes || '',
+    } : {
       date: '',
       start_time: '',
       duration_hours: '',
@@ -68,6 +97,24 @@ const AddEventDialog = ({ onEventAdded }: AddEventDialogProps) => {
     },
   });
 
+  // Update form when editEvent changes
+  useState(() => {
+    if (editEvent) {
+      form.reset({
+        date: editEvent.date,
+        start_time: editEvent.start_time,
+        duration_hours: editEvent.duration_hours.toString(),
+        client_name: editEvent.client_name,
+        event_type: editEvent.event_type,
+        rate_type: editEvent.rate_type as 'hourly' | 'fixed',
+        rate: editEvent.rate.toString(),
+        payment_status: editEvent.payment_status as 'paid' | 'unpaid',
+        notes: editEvent.notes || '',
+      });
+      setOpen(true);
+    }
+  });
+
   const onSubmit = async (data: EventFormData) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -77,52 +124,91 @@ const AddEventDialog = ({ onEventAdded }: AddEventDialogProps) => {
       const rate = parseFloat(data.rate);
       const totalAmount = data.rate_type === 'hourly' ? duration * rate : rate;
 
-      const { error } = await supabase.from('events').insert({
-        user_id: user.id,
-        date: data.date,
-        start_time: data.start_time,
-        duration_hours: duration,
-        client_name: data.client_name,
-        event_type: data.event_type,
-        rate_type: data.rate_type,
-        rate: rate,
-        total_amount: totalAmount,
-        payment_status: data.payment_status,
-        source: 'web',
-        notes: data.notes,
-      });
+      if (isEditMode && editEvent) {
+        // Update existing event
+        const { error } = await supabase
+          .from('events')
+          .update({
+            date: data.date,
+            start_time: data.start_time,
+            duration_hours: duration,
+            client_name: data.client_name,
+            event_type: data.event_type,
+            rate_type: data.rate_type,
+            rate: rate,
+            total_amount: totalAmount,
+            payment_status: data.payment_status,
+            notes: data.notes,
+          })
+          .eq('id', editEvent.id);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast({
-        title: 'הפגישה נוספה בהצלחה',
-        description: `פגישה עם ${data.client_name} נוספה למערכת`,
-      });
+        toast({
+          title: 'הפגישה עודכנה בהצלחה',
+          description: `פגישה עם ${data.client_name} עודכנה במערכת`,
+        });
 
-      form.reset();
-      setOpen(false);
-      onEventAdded();
+        setOpen(false);
+        onEditComplete?.();
+      } else {
+        // Insert new event
+        const { error } = await supabase.from('events').insert({
+          user_id: user.id,
+          date: data.date,
+          start_time: data.start_time,
+          duration_hours: duration,
+          client_name: data.client_name,
+          event_type: data.event_type,
+          rate_type: data.rate_type,
+          rate: rate,
+          total_amount: totalAmount,
+          payment_status: data.payment_status,
+          source: 'web',
+          notes: data.notes,
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: 'הפגישה נוספה בהצלחה',
+          description: `פגישה עם ${data.client_name} נוספה למערכת`,
+        });
+
+        form.reset();
+        setOpen(false);
+        onEventAdded();
+      }
     } catch (error) {
-      console.error('Error adding event:', error);
+      console.error('Error saving event:', error);
       toast({
         title: 'שגיאה',
-        description: 'לא ניתן להוסיף את הפגישה. נסה שוב.',
+        description: isEditMode ? 'לא ניתן לעדכן את הפגישה. נסה שוב.' : 'לא ניתן להוסיף את הפגישה. נסה שוב.',
         variant: 'destructive',
       });
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="gap-2">
-          <Plus className="w-4 h-4" />
-          הוסף פגישה חדשה
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={(newOpen) => {
+      setOpen(newOpen);
+      if (!newOpen && isEditMode) {
+        onEditComplete?.();
+      }
+    }}>
+      {!isEditMode && (
+        <DialogTrigger asChild>
+          <Button className="gap-2">
+            <Plus className="w-4 h-4" />
+            הוסף פגישה חדשה
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl">הוספת פגישה חדשה</DialogTitle>
+          <DialogTitle className="text-xl">
+            {isEditMode ? 'עריכת פגישה' : 'הוספת פגישה חדשה'}
+          </DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
