@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -98,7 +98,7 @@ const AddEventDialog = ({ onEventAdded, editEvent, onEditComplete }: AddEventDia
   });
 
   // Update form when editEvent changes
-  useState(() => {
+  useEffect(() => {
     if (editEvent) {
       form.reset({
         date: editEvent.date,
@@ -113,7 +113,7 @@ const AddEventDialog = ({ onEventAdded, editEvent, onEditComplete }: AddEventDia
       });
       setOpen(true);
     }
-  });
+  }, [editEvent, form]);
 
   const onSubmit = async (data: EventFormData) => {
     try {

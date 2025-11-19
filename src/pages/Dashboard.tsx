@@ -140,7 +140,6 @@ const Dashboard = () => {
               סקירה מלאה של הפגישות וההכנסות שלך
             </p>
           </div>
-          <AddEventDialog onEventAdded={fetchEvents} />
           <AddEventDialog 
             editEvent={editingEvent} 
             onEditComplete={handleEditComplete}
