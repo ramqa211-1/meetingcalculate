@@ -11,6 +11,8 @@ VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
 ```
 
+> **הערה:** בקובץ `.env` מקומי, השמות חייבים להתחיל ב-`VITE_` כדי ש-Vite יטען אותם. ב-GitHub Secrets, השתמש בשמות `SUPABASE_URL` ו-`SUPABASE_PUBLISHABLE_KEY`.
+
 ### 2. הרצת מיגרציות
 
 #### אופציה א': שימוש ב-Supabase CLI (מומלץ)

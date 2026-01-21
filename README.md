@@ -104,8 +104,9 @@ npm run db:push
 1. **הגדר GitHub Secrets**
    - לך ל-Settings → Secrets and variables → Actions
    - הוסף את המשתנים הבאים:
-     - `VITE_SUPABASE_URL` - כתובת פרויקט Supabase
-     - `VITE_SUPABASE_PUBLISHABLE_KEY` - מפתח anon של Supabase
+     - `SUPABASE_URL` - כתובת פרויקט Supabase
+     - `SUPABASE_PUBLISHABLE_KEY` - מפתח anon של Supabase
+   - **הערה:** בקובץ `.env` מקומי, השתמש ב-`VITE_SUPABASE_URL` ו-`VITE_SUPABASE_PUBLISHABLE_KEY` (Vite דורש את הקידומת `VITE_`)
 
 2. **פרוס Edge Functions ל-Supabase**
    - ראה הוראות מפורטות ב-[SETUP.md](./SETUP.md#3-deploy-edge-functions)
