@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import Layout from '@/components/Layout';
 import KPICard from '@/components/dashboard/KPICard';
-import { DollarSign, Calendar, Clock, TrendingUp, PieChart } from 'lucide-react';
+import { DollarSign, Calendar, Clock, TrendingUp, PieChart, Shield } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, Pie, PieChart as RePieChart, Cell } from 'recharts';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { he } from 'date-fns/locale';
+import { useAuth } from '@/hooks/use-auth';
 
 interface Event {
   id: string;
@@ -29,11 +30,18 @@ const Reports = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { isAdmin, loading: authLoading } = useAuth();
 
   useEffect(() => {
     checkAuth();
     fetchMonthlyEvents();
   }, []);
+
+  useEffect(() => {
+    if (!authLoading) {
+      fetchMonthlyEvents();
+    }
+  }, [isAdmin, authLoading]);
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -139,9 +147,18 @@ const Reports = () => {
       <div className="space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-foreground">דוח חודשי</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold text-foreground">דוח חודשי</h1>
+            {isAdmin && (
+              <div className="flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-md text-sm">
+                <Shield className="w-4 h-4" />
+                <span>אדמין</span>
+              </div>
+            )}
+          </div>
           <p className="text-muted-foreground mt-1">
             {format(new Date(), 'MMMM yyyy', { locale: he })}
+            {isAdmin && ' - כל האירועים במערכת'}
           </p>
         </div>
 

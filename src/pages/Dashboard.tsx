@@ -5,8 +5,9 @@ import Layout from '@/components/Layout';
 import KPICard from '@/components/dashboard/KPICard';
 import EventsTable from '@/components/dashboard/EventsTable';
 import AddEventDialog from '@/components/dashboard/AddEventDialog';
-import { DollarSign, Calendar, Clock, TrendingUp } from 'lucide-react';
+import { DollarSign, Calendar, Clock, TrendingUp, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
 
 interface Event {
   id: string;
@@ -30,11 +31,18 @@ const Dashboard = () => {
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isAdmin, loading: authLoading } = useAuth();
 
   useEffect(() => {
     checkAuth();
     fetchEvents();
   }, []);
+
+  useEffect(() => {
+    if (!authLoading) {
+      fetchEvents();
+    }
+  }, [isAdmin, authLoading]);
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -135,9 +143,20 @@ const Dashboard = () => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">לוח הבקרה</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-3xl font-bold text-foreground">לוח הבקרה</h1>
+              {isAdmin && (
+                <div className="flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-md text-sm">
+                  <Shield className="w-4 h-4" />
+                  <span>אדמין</span>
+                </div>
+              )}
+            </div>
             <p className="text-muted-foreground mt-1">
-              סקירה מלאה של הפגישות וההכנסות שלך
+              {isAdmin 
+                ? 'סקירה מלאה של כל הפגישות וההכנסות במערכת'
+                : 'סקירה מלאה של הפגישות וההכנסות שלך'
+              }
             </p>
           </div>
           <AddEventDialog 

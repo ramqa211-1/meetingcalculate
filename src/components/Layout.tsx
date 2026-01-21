@@ -1,9 +1,10 @@
 import { ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Calendar, BarChart3, Settings, LogOut } from 'lucide-react';
+import { Calendar, BarChart3, Settings, LogOut, Shield, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
 
 interface LayoutProps {
   children: ReactNode;
@@ -13,6 +14,7 @@ const Layout = ({ children }: LayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isAdmin } = useAuth();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -26,7 +28,9 @@ const Layout = ({ children }: LayoutProps) => {
   const navItems = [
     { path: '/dashboard', label: 'פגישות', icon: Calendar },
     { path: '/reports', label: 'דוחות', icon: BarChart3 },
+    { path: '/ai-chat', label: 'צ\'אט AI', icon: Bot },
     { path: '/settings', label: 'הגדרות', icon: Settings },
+    ...(isAdmin ? [{ path: '/admin', label: 'ניהול משתמשים', icon: Shield }] : []),
   ];
 
   return (

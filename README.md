@@ -1,73 +1,194 @@
-# Welcome to your Lovable project
+# מערכת ניהול פגישות - Meeting Calculate AI
 
-## Project info
+מערכת ניהול פגישות חכמה עם AI לניהול פגישות, הרצאות ופרויקטים. המערכת מספקת ניהול מלא של פגישות, דוחות חודשיים, ניהול משתמשים, וצ'אט AI חכם.
 
-**URL**: https://lovable.dev/projects/7b7820f7-241b-409f-8efa-b53cd6a44120
+## תכונות עיקריות
 
-## How can I edit this code?
+### משתמש רגיל
+- 📅 ניהול פגישות אישיות
+- 📊 דוחות חודשיים מפורטים
+- ⚙️ הגדרות משתמש מותאמות אישית
+- 💬 צ'אט AI לשאלות על הנתונים (קריאה בלבד)
 
-There are several ways of editing your application.
+### אדמין
+- 👥 כל התכונות של משתמש רגיל
+- 🌐 צפייה בכל הפגישות במערכת
+- 🛡️ ניהול משתמשים ותפקידים
+- 🤖 צ'אט AI עם יכולת כתיבה (יצירה, עדכון, מחיקה)
+- 📈 גישה מלאה לכל הנתונים
 
-**Use Lovable**
+## טכנולוגיות
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/7b7820f7-241b-409f-8efa-b53cd6a44120) and start prompting.
+- **Frontend**: React 18 + TypeScript
+- **Build Tool**: Vite
+- **UI Framework**: shadcn/ui + Tailwind CSS
+- **Backend**: Supabase (Database + Auth + Edge Functions)
+- **AI**: OpenAI GPT-4o-mini
+- **Routing**: React Router v6
+- **State Management**: TanStack Query
 
-Changes made via Lovable will be committed automatically to this repo.
+## התקנה והגדרה
 
-**Use your preferred IDE**
+### דרישות מקדימות
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- Node.js 18+ ו-npm
+- חשבון Supabase
+- חשבון OpenAI (לצ'אט AI)
+- חשבון Google Cloud (ל-OAuth - אופציונלי)
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### הוראות התקנה מהירה
 
-Follow these steps:
+1. **שכפל את המאגר**
+   ```bash
+   git clone https://github.com/ramqa211-1/meetingcalculate.git
+   cd meetingcalculate
+   ```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+2. **התקן תלויות**
+   ```bash
+   npm install
+   ```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+3. **הגדר משתני סביבה**
+   - צור קובץ `.env` בתיקיית הפרויקט
+   - העתק מ-`.env.example` (אם קיים) או הוסף:
+   ```env
+   VITE_SUPABASE_URL=your_supabase_project_url
+   VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
+   ```
 
-# Step 3: Install the necessary dependencies.
-npm i
+4. **הרץ את הפרויקט**
+   ```bash
+   npm run dev
+   ```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+### הגדרה מפורטת
+
+עבור הוראות מפורטות על:
+- הגדרת Supabase
+- הרצת מיגרציות
+- הגדרת Google OAuth
+- הגדרת AI Chat
+- פריסת Edge Functions
+
+ראה: [SETUP.md](./SETUP.md)
+
+## פיתוח
+
+```bash
+# הרצת שרת פיתוח
 npm run dev
+
+# Build לייצור
+npm run build
+
+# Preview של Build
+npm run preview
+
+# Linting
+npm run lint
+
+# הגדרת מסד נתונים
+npm run db:setup
+
+# Push מיגרציות ל-Supabase
+npm run db:push
 ```
 
-**Edit a file directly in GitHub**
+## פריסה ב-GitHub Pages
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+הפרויקט מוכן לפריסה ב-GitHub Pages עם GitHub Actions.
 
-**Use GitHub Codespaces**
+### לפני הפריסה
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+1. **הגדר GitHub Secrets**
+   - לך ל-Settings → Secrets and variables → Actions
+   - הוסף את המשתנים הבאים:
+     - `VITE_SUPABASE_URL` - כתובת פרויקט Supabase
+     - `VITE_SUPABASE_PUBLISHABLE_KEY` - מפתח anon של Supabase
 
-## What technologies are used for this project?
+2. **פרוס Edge Functions ל-Supabase**
+   - ראה הוראות מפורטות ב-[SETUP.md](./SETUP.md#3-deploy-edge-functions)
+   - ודא ש-`OPENAI_API_KEY` מוגדר ב-Supabase Secrets
 
-This project is built with:
+### הפריסה
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+1. **Push ל-GitHub**
+   ```bash
+   git add .
+   git commit -m "Prepare for deployment"
+   git push origin main
+   ```
 
-## How can I deploy this project?
+2. **הגדר GitHub Pages**
+   - לך ל-Settings → Pages
+   - תחת "Source", בחר "GitHub Actions"
+   - ה-workflow יבנה ויפרס אוטומטית
 
-Simply open [Lovable](https://lovable.dev/projects/7b7820f7-241b-409f-8efa-b53cd6a44120) and click on Share -> Publish.
+3. **בדוק את הלוגים**
+   - לך ל-Actions tab
+   - בחר את ה-workflow האחרון
+   - בדוק שהכל עבד בהצלחה
 
-## Can I connect a custom domain to my Lovable project?
+### גישה לאפליקציה
 
-Yes, you can!
+לאחר הפריסה, האפליקציה תהיה זמינה ב:
+```
+https://ramqa211-1.github.io/meetingcalculate/
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## מבנה הפרויקט
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+```
+meetingCalaculteAI/
+├── src/
+│   ├── components/      # רכיבי UI
+│   │   ├── dashboard/   # רכיבי לוח הבקרה
+│   │   └── ui/          # רכיבי shadcn/ui
+│   ├── hooks/           # Custom React Hooks
+│   ├── integrations/    # אינטגרציות (Supabase)
+│   ├── lib/             # פונקציות עזר
+│   ├── pages/           # דפי האפליקציה
+│   └── App.tsx          # רכיב ראשי
+├── supabase/
+│   ├── functions/       # Edge Functions
+│   │   ├── ai-chat/
+│   │   ├── calculate-monthly-stats/
+│   │   └── parse-whatsapp-message/
+│   └── migrations/      # מיגרציות מסד נתונים
+├── .github/
+│   └── workflows/       # GitHub Actions workflows
+└── public/              # קבצים סטטיים
+```
+
+## אבטחה
+
+- ✅ כל המפתחות והסודות מנוהלים דרך משתני סביבה
+- ✅ קובץ `.env` מופיע ב-`.gitignore` ולא עולה ל-GitHub
+- ✅ Edge Functions משתמשות ב-Supabase Secrets לאבטחה מקסימלית
+- ✅ אימות דרך Supabase Auth עם Google OAuth
+
+## תרומה
+
+תרומות תמיד מתקבלות בברכה! אנא:
+
+1. Fork את המאגר
+2. צור branch חדש (`git checkout -b feature/amazing-feature`)
+3. Commit את השינויים (`git commit -m 'Add amazing feature'`)
+4. Push ל-branch (`git push origin feature/amazing-feature`)
+5. פתח Pull Request
+
+## רישיון
+
+הפרויקט זה הוא פרויקט אישי.
+
+## תמיכה
+
+לשאלות ותמיכה:
+- פתח Issue ב-GitHub
+- ראה [SETUP.md](./SETUP.md) לפתרון בעיות נפוצות
+
+## קישורים
+
+- [Supabase Dashboard](https://supabase.com/dashboard/project/owarzqykotsvmdbbhxyn)
+- [Documentation](./SETUP.md)
