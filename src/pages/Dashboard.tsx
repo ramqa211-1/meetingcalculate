@@ -8,6 +8,7 @@ import AddEventDialog from '@/components/dashboard/AddEventDialog';
 import { DollarSign, Calendar, Clock, TrendingUp, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
+import backgroundImage from '@/assets/background.png';
 
 interface Event {
   id: string;
@@ -139,7 +140,18 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      <div className="space-y-8">
+      <div 
+        className="space-y-8"
+        style={{
+          backgroundImage: `url(${backgroundImage})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          minHeight: 'calc(100vh - 200px)',
+          padding: '2rem',
+          borderRadius: '8px',
+        }}
+      >
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>

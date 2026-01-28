@@ -79,7 +79,7 @@ const EventsTable = ({ events, onEdit, onDelete }: EventsTableProps) => {
   };
 
   return (
-    <div className="rounded-lg border border-border bg-card">
+    <div className="rounded-lg border border-white/40 bg-white/65 backdrop-blur-sm">
       <Table>
         <TableHeader>
           <TableRow>
