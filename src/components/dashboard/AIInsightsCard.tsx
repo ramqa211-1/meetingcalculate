@@ -52,6 +52,9 @@ const AIInsightsCard = ({
       if (!session) throw new Error('לא מחובר');
 
       const { data, error: fnError } = await supabase.functions.invoke('ai-chat', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: {
           type: 'generate_insights',
           events,
