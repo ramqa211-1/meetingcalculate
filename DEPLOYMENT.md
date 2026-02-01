@@ -65,7 +65,7 @@
 - בדוק שה-permissions נכונים (ה-workflow כולל את זה)
 
 **אפליקציה לא נטענת?**
-- ודא שהגישה ל-URL נכונה: `https://ramqa211-1.github.io/meetingcalculate/`
+- ודא שהגישה ל-URL נכונה: `https://ramqa211-1.github.io/[שם-הריפו]/` (החלף את שם-הריפו בשם הריפוזיטורי בפועל, למשל meetingCalaculteAI או meetingcalculate)
 - בדוק את ה-console בדפדפן לראות שגיאות JavaScript
 - ודא ש-Supabase URL ו-Key נכונים
 
@@ -125,8 +125,10 @@ supabase functions deploy parse-whatsapp-message
 לאחר הפריסה המוצלחת, האפליקציה תהיה זמינה ב:
 
 ```
-https://ramqa211-1.github.io/meetingcalculate/
+https://ramqa211-1.github.io/[שם-הריפוזיטורי]/
 ```
+
+(החלף את שם-הריפוזיטורי בשם הריפו שלך ב-GitHub - לדוגמה meetingCalaculteAI)
 
 ### 8. בדיקות אחרונות
 

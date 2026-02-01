@@ -5,7 +5,7 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: '/meetingcalculate/', // GitHub Pages base path
+  base: process.env.VITE_BASE_PATH || '/', // GitHub Actions sets VITE_BASE_PATH=/repo-name/
   server: {
     host: "::",
     port: 8080,
