@@ -119,12 +119,12 @@ const Admin = () => {
 
   return (
     <Layout>
-      <div className="space-y-8">
+      <div className="space-y-6 md:space-y-8">
         {/* Header */}
         <div>
           <div className="flex items-center gap-2">
-            <Shield className="w-8 h-8 text-primary" />
-            <h1 className="text-3xl font-bold text-foreground">ניהול משתמשים</h1>
+            <Shield className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">ניהול משתמשים</h1>
           </div>
           <p className="text-muted-foreground mt-1">
             נהל תפקידי משתמשים והרשאות במערכת
@@ -162,7 +162,7 @@ const Admin = () => {
         {/* Users Table */}
         <Card>
           <CardHeader>
-            <CardTitle>רשימת משתמשים</CardTitle>
+            <CardTitle className="text-lg sm:text-xl">רשימת משתמשים</CardTitle>
             <CardDescription>
               ניתן לשנות תפקידים ולנהל הרשאות
             </CardDescription>
@@ -174,7 +174,7 @@ const Admin = () => {
                   <TableHead>שם</TableHead>
                   <TableHead>אימייל</TableHead>
                   <TableHead>תפקיד</TableHead>
-                  <TableHead>תאריך הצטרפות</TableHead>
+                  <TableHead className="hidden sm:table-cell">תאריך הצטרפות</TableHead>
                   <TableHead>פעולות</TableHead>
                 </TableRow>
               </TableHeader>
@@ -197,7 +197,7 @@ const Admin = () => {
                           {profile.role === 'admin' ? 'אדמין' : 'משתמש'}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden sm:table-cell">
                         {profile.created_at
                           ? new Date(profile.created_at).toLocaleDateString('he-IL')
                           : '-'}

@@ -3,7 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import Layout from '@/components/Layout';
 import KPICard from '@/components/dashboard/KPICard';
-import { DollarSign, Calendar, Clock, TrendingUp, PieChart, Shield } from 'lucide-react';
+import AIInsightsCard from '@/components/dashboard/AIInsightsCard';
+import { useEmploymentContext } from '@/hooks/use-employment-context';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { DollarSign, Calendar, Clock, TrendingUp, Shield } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, Pie, PieChart as RePieChart, Cell } from 'recharts';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
@@ -31,6 +34,8 @@ const Reports = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { isAdmin, loading: authLoading } = useAuth();
+  const { employmentContext } = useEmploymentContext();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     checkAuth();
@@ -144,11 +149,11 @@ const Reports = () => {
 
   return (
     <Layout>
-      <div className="space-y-8">
+      <div className="space-y-6 md:space-y-8">
         {/* Header */}
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold text-foreground">דוח חודשי</h1>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">דוח חודשי</h1>
             {isAdmin && (
               <div className="flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-md text-sm">
                 <Shield className="w-4 h-4" />
@@ -161,6 +166,14 @@ const Reports = () => {
             {isAdmin && ' - כל האירועים במערכת'}
           </p>
         </div>
+
+        {/* AI Insights */}
+        <AIInsightsCard
+          events={events}
+          kpis={kpis}
+          employmentContext={employmentContext}
+          formatCurrency={formatCurrency}
+        />
 
         {/* KPIs */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -202,16 +215,37 @@ const Reports = () => {
               <CardTitle>הכנסות לפי שבוע</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={weeklyData}>
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip 
+              <ResponsiveContainer width="100%" height={isMobile ? 250 : 300}>
+                <BarChart data={weeklyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fontSize: 12 }}
+                    angle={0}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 12 }}
+                    tickFormatter={(value) => {
+                      if (value >= 1000) return `₪${(value / 1000).toFixed(0)}K`;
+                      return `₪${value}`;
+                    }}
+                    width={50}
+                  />
+                  <Tooltip
                     formatter={(value) => formatCurrency(value as number)}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px',
+                    }}
                     labelStyle={{ color: 'hsl(var(--foreground))' }}
                   />
-                  <Legend />
-                  <Bar dataKey="revenue" fill="hsl(243, 75%, 59%)" name="הכנסה" />
+                  <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                  <Bar
+                    dataKey="revenue"
+                    fill="hsl(243, 75%, 59%)"
+                    name="הכנסה"
+                    radius={[8, 8, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -223,15 +257,18 @@ const Reports = () => {
               <CardTitle>חלוקה לפי סוג שירות</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <RePieChart>
+              <ResponsiveContainer width="100%" height={isMobile ? 250 : 300}>
+                <RePieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                   <Pie
                     data={eventTypeData}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={(entry) => `${entry.name}: ${formatCurrency(entry.value)}`}
-                    outerRadius={80}
+                    label={({ name, percent }) =>
+                      percent > 0.05 ? `${name} (${(percent * 100).toFixed(0)}%)` : ''
+                    }
+                    outerRadius={100}
+                    innerRadius={60}
                     fill="#8884d8"
                     dataKey="value"
                   >
@@ -239,7 +276,20 @@ const Reports = () => {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value) => formatCurrency(value as number)} />
+                  <Tooltip
+                    formatter={(value) => formatCurrency(value as number)}
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px',
+                    }}
+                  />
+                  <Legend
+                    layout="horizontal"
+                    align="center"
+                    verticalAlign="bottom"
+                    wrapperStyle={{ paddingTop: '20px' }}
+                  />
                 </RePieChart>
               </ResponsiveContainer>
             </CardContent>
@@ -252,7 +302,7 @@ const Reports = () => {
             <CardTitle>סטטיסטיקות נוספות</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
               <div className="text-center">
                 <p className="text-2xl font-bold text-primary">
                   {formatCurrency(kpis.unpaidRevenue)}

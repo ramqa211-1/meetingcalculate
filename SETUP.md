@@ -118,10 +118,12 @@ WHERE id = 'USER_ID';
 
 ### 3. Deploy Edge Functions
 
-יש 3 Edge Functions שצריך לפרוס:
+יש 6 Edge Functions שצריך לפרוס:
 - `ai-chat` - צ'אט AI (דורש OPENAI_API_KEY)
 - `calculate-monthly-stats` - חישוב סטטיסטיקות חודשיות
-- `parse-whatsapp-message` - פרסור הודעות WhatsApp
+- `parse-whatsapp-message` - פרסור הודעות WhatsApp (דורש LOVABLE_API_KEY)
+- `whatsapp-bot` - בוט WhatsApp (דורש GREENAPI_INSTANCE_ID, GREENAPI_TOKEN)
+- `send-whatsapp-notification` - שליחת התראות WhatsApp
 
 #### אופציה א': שימוש ב-Supabase CLI (מומלץ)
 
@@ -139,6 +141,8 @@ supabase link --project-ref owarzqykotsvmdbbhxyn
 supabase functions deploy ai-chat
 supabase functions deploy calculate-monthly-stats
 supabase functions deploy parse-whatsapp-message
+supabase functions deploy whatsapp-bot
+supabase functions deploy send-whatsapp-notification
 ```
 
 #### אופציה ב': פריסה ידנית דרך Supabase Dashboard
@@ -158,8 +162,15 @@ supabase functions deploy parse-whatsapp-message
 1. לך ל-Settings → Edge Functions → Secrets
 2. ודא שקיימים:
    - `OPENAI_API_KEY` (נדרש ל-ai-chat)
+   - `LOVABLE_API_KEY` (נדרש ל-parse-whatsapp-message)
+   - `GREENAPI_INSTANCE_ID` (נדרש ל-WhatsApp - אופציונלי)
+   - `GREENAPI_TOKEN` (נדרש ל-WhatsApp - אופציונלי)
    - `SUPABASE_URL` (מוגדר אוטומטית)
    - `SUPABASE_SERVICE_ROLE_KEY` (מוגדר אוטומטית)
+
+### 5. הגדרת WhatsApp (אופציונלי)
+
+להנחיות מפורטות לאינטגרציית WhatsApp עם GREEN-API, ראה [docs/WHATSAPP_SETUP.md](docs/WHATSAPP_SETUP.md)
 
 ## הרצת הפרויקט
 

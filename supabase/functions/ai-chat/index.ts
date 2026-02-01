@@ -58,7 +58,81 @@ serve(async (req) => {
     const isAdmin = profile?.role === 'admin';
 
     // Parse request
-    const { message, messages } = await req.json();
+    const body = await req.json();
+    const { message, messages, type, events: providedEvents, kpis, employmentContext } = body;
+
+    // Handle generate_insights request type
+    if (type === 'generate_insights') {
+      const eventsData = providedEvents || [];
+      const employmentData = employmentContext || null;
+
+      const insightsSystemPrompt = `אתה יועץ פיננסי חכם שמנתח נתונים של עצמאי שעובד גם כשכיר.
+
+נתוני המשתמש:
+${JSON.stringify({ kpis, events: eventsData, employmentContext: employmentData }, null, 2)}
+
+אם המשתמש מוגדר כשכיר (employmentContext.is_full_time_employee = true):
+- חשב את שווי השעה והשעה היומית שלו מהשכר
+- עבור כל אירוע - בדוק אם היה בשעות עבודה (בין work_start_time ל-work_end_time, ימים א-ה)
+- אם אירוע היה בשעות עבודה - עלות ההזדמנות = שכר יומי. רווח נטו = הכנסה מהאירוע - עלות יום חופש
+- אם אירוע היה מחוץ לשעות עבודה - רווח נטו = הכנסה מלאה
+- נתח: כמה אירועים היו כדאיים vs לא כדאיים
+- המלצות: הימנע מפרויקטים בשעות עבודה אלא אם מעל ~₪1,500, העדף ערבים וסופ"ש
+
+פורמט התגובה - כתוב בעברית, בצורה מובנית:
+1. סיכום המצב התעסוקתי (אם יש)
+2. ניתוח כדאיות פרויקטים - כמה כדאיים/לא כדאיים עם דוגמאות
+3. המלצות תזמון - איזה שעות/ימים עדיפים
+4. ניתוח תמחור - ממוצע לשעה, רף מינימום מומלץ
+5. סיכום כלכלי - רווח נטו אמיתי, תוספת למשכורת
+6. 3-5 המלצות פעולה קונקרטיות
+
+השתמש באימוג'ים לקריאות. ענה בפסקאות קצרות וברורות.`;
+
+      if (!OPENAI_API_KEY) {
+        return new Response(
+          JSON.stringify({
+            response: 'שירות AI לא מוגדר. אנא הגדר OPENAI_API_KEY ב-Supabase.',
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+          }
+        );
+      }
+
+      const insightsResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: insightsSystemPrompt },
+            { role: 'user', content: 'בצע ניתוח מלא והחזר תובנות מפורטות לפי הפורמט המבוקש.' },
+          ],
+          temperature: 0.5,
+        }),
+      });
+
+      if (!insightsResponse.ok) {
+        const errText = await insightsResponse.text();
+        throw new Error(`OpenAI API error: ${errText}`);
+      }
+
+      const insightsData = await insightsResponse.json();
+      const insightsText = insightsData.choices[0]?.message?.content || 'לא הצלחתי ליצור תובנות.';
+
+      return new Response(
+        JSON.stringify({ response: insightsText }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        }
+      );
+    }
 
     if (!message) {
       return new Response(
@@ -78,10 +152,17 @@ serve(async (req) => {
       .from('user_settings')
       .select('*');
 
+    const { data: employmentCtx } = await supabase
+      .from('employment_context')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
     // Build context
     const context = {
       events: events || [],
       settings: settings || [],
+      employmentContext: employmentCtx || null,
       currentUser: {
         id: user.id,
         email: user.email,
@@ -94,12 +175,14 @@ serve(async (req) => {
 המערכת כוללת:
 - פגישות/הרצאות/פרויקטים עם תאריכים, לקוחות, תמחור, וסטטוס תשלום
 - הגדרות משתמשים עם מחירי ברירת מחדל
+- הקשר תעסוקתי (שכר, שעות עבודה) - אם מוגדר, השתמש בזה לחישוב כדאיות פרויקטים
 
 תפקידך:
 1. לענות על שאלות על הנתונים במערכת
 2. לחשב סכומים, תאריכים, וסטטיסטיקות
 3. לעזור בניהול פגישות ופרויקטים
-${isAdmin ? '4. כאדמין, אתה יכול ליצור, לעדכן ולמחוק רשומות' : '4. אתה יכול רק לקרוא נתונים, לא לשנות אותם'}
+4. אם יש employmentContext - חשב כדאיות פרויקטים (עלות יום חופש vs הכנסה)
+${isAdmin ? '5. כאדמין, אתה יכול ליצור, לעדכן ולמחוק רשומות' : '5. אתה יכול רק לקרוא נתונים, לא לשנות אותם'}
 
 השתמש בנתונים הבאים:
 ${JSON.stringify(context, null, 2)}

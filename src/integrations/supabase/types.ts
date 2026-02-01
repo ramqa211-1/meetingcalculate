@@ -104,11 +104,78 @@ export type Database = {
         }
         Relationships: []
       }
+      employment_context: {
+        Row: {
+          id: string
+          user_id: string
+          is_full_time_employee: boolean
+          monthly_salary_net: number | null
+          work_hours_per_day: number
+          work_days_per_month: number
+          work_start_time: string
+          work_end_time: string
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          is_full_time_employee?: boolean
+          monthly_salary_net?: number | null
+          work_hours_per_day?: number
+          work_days_per_month?: number
+          work_start_time?: string
+          work_end_time?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          is_full_time_employee?: boolean
+          monthly_salary_net?: number | null
+          work_hours_per_day?: number
+          work_days_per_month?: number
+          work_start_time?: string
+          work_end_time?: string
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      whatsapp_settings: {
+        Row: {
+          id: string
+          user_id: string
+          phone_number: string
+          notifications_enabled: boolean
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          phone_number: string
+          notifications_enabled?: boolean
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          phone_number?: string
+          notifications_enabled?: boolean
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           id: string
           email: string | null
           full_name: string | null
+          phone_number: string | null
           role: 'user' | 'admin'
           created_at: string | null
           updated_at: string | null
@@ -117,6 +184,7 @@ export type Database = {
           id: string
           email?: string | null
           full_name?: string | null
+          phone_number?: string | null
           role?: 'user' | 'admin'
           created_at?: string | null
           updated_at?: string | null
@@ -125,6 +193,7 @@ export type Database = {
           id?: string
           email?: string | null
           full_name?: string | null
+          phone_number?: string | null
           role?: 'user' | 'admin'
           created_at?: string | null
           updated_at?: string | null

@@ -79,33 +79,33 @@ const EventsTable = ({ events, onEdit, onDelete }: EventsTableProps) => {
   };
 
   return (
-    <div className="rounded-lg border border-white/40 bg-white/65 backdrop-blur-sm">
+    <div className="rounded-lg border border-white/40 bg-white/65 backdrop-blur-sm overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="text-right">
+            <TableHead className="text-right min-w-[90px]">
               <Button variant="ghost" onClick={() => handleSort('date')} className="font-semibold">
                 תאריך
               </Button>
             </TableHead>
-            <TableHead className="text-right">זמן התחלה</TableHead>
-            <TableHead className="text-right">זמן סיום</TableHead>
+            <TableHead className="text-right hidden sm:table-cell">זמן התחלה</TableHead>
+            <TableHead className="text-right hidden md:table-cell">זמן סיום</TableHead>
             <TableHead className="text-right">משך</TableHead>
-            <TableHead className="text-right">
+            <TableHead className="text-right min-w-[100px]">
               <Button variant="ghost" onClick={() => handleSort('client_name')} className="font-semibold">
                 לקוח
               </Button>
             </TableHead>
-            <TableHead className="text-right">סוג</TableHead>
-            <TableHead className="text-right">תמחור</TableHead>
-            <TableHead className="text-right">
+            <TableHead className="text-right hidden sm:table-cell">סוג</TableHead>
+            <TableHead className="text-right hidden md:table-cell">תמחור</TableHead>
+            <TableHead className="text-right min-w-[80px]">
               <Button variant="ghost" onClick={() => handleSort('total_amount')} className="font-semibold">
                 סכום
               </Button>
             </TableHead>
-            <TableHead className="text-right">סטטוס תשלום</TableHead>
-            <TableHead className="text-right">מקור</TableHead>
-            <TableHead className="text-right">פעולות</TableHead>
+            <TableHead className="text-right hidden md:table-cell">סטטוס תשלום</TableHead>
+            <TableHead className="text-right hidden lg:table-cell">מקור</TableHead>
+            <TableHead className="text-right w-[60px]">פעולות</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -121,23 +121,25 @@ const EventsTable = ({ events, onEdit, onDelete }: EventsTableProps) => {
                 <TableCell className="font-medium">
                   {format(new Date(event.date), 'dd/MM/yyyy', { locale: he })}
                 </TableCell>
-                <TableCell>{event.start_time}</TableCell>
-                <TableCell>{calculateEndTime(event.start_time, event.duration_hours)}</TableCell>
+                <TableCell className="hidden sm:table-cell">{event.start_time}</TableCell>
+                <TableCell className="hidden md:table-cell">
+                  {calculateEndTime(event.start_time, event.duration_hours)}
+                </TableCell>
                 <TableCell>{event.duration_hours} שעות</TableCell>
-                <TableCell>{event.client_name}</TableCell>
-                <TableCell>
+                <TableCell className="font-medium">{event.client_name}</TableCell>
+                <TableCell className="hidden sm:table-cell">
                   <Badge variant="outline">{event.event_type}</Badge>
                 </TableCell>
-                <TableCell>
+                <TableCell className="hidden md:table-cell">
                   {event.rate_type === 'hourly' ? 'לשעה' : 'לפגישה'} - {formatCurrency(event.rate)}
                 </TableCell>
                 <TableCell className="font-bold">{formatCurrency(event.total_amount)}</TableCell>
-                <TableCell>
+                <TableCell className="hidden md:table-cell">
                   <Badge variant={event.payment_status === 'paid' ? 'default' : 'secondary'}>
                     {event.payment_status === 'paid' ? 'שולם' : 'לא שולם'}
                   </Badge>
                 </TableCell>
-                <TableCell>
+                <TableCell className="hidden lg:table-cell">
                   <Badge variant={event.source === 'whatsapp' ? 'outline' : 'secondary'}>
                     {event.source === 'whatsapp' ? 'WhatsApp' : 'מערכת'}
                   </Badge>

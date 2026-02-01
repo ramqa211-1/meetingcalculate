@@ -204,15 +204,15 @@ const AddEventDialog = ({ onEventAdded, editEvent, onEditComplete }: AddEventDia
           </Button>
         </DialogTrigger>
       )}
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl">
+          <DialogTitle className="text-lg sm:text-xl">
             {isEditMode ? 'עריכת פגישה' : 'הוספת פגישה חדשה'}
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="date"
@@ -241,7 +241,7 @@ const AddEventDialog = ({ onEventAdded, editEvent, onEditComplete }: AddEventDia
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="duration_hours"
@@ -284,7 +284,7 @@ const AddEventDialog = ({ onEventAdded, editEvent, onEditComplete }: AddEventDia
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="rate_type"

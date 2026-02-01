@@ -17,8 +17,11 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { useEmploymentContext } from '@/hooks/use-employment-context';
+import { Loader2, Briefcase, MessageSquare } from 'lucide-react';
 
 const settingsSchema = z.object({
   business_name: z.string().optional(),
@@ -28,11 +31,34 @@ const settingsSchema = z.object({
 
 type SettingsFormData = z.infer<typeof settingsSchema>;
 
+const formatCurrency = (amount: number) =>
+  new Intl.NumberFormat('he-IL', { style: 'currency', currency: 'ILS' }).format(amount);
+
 const Settings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [employmentSaving, setEmploymentSaving] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const {
+    employmentContext,
+    loading: employmentLoading,
+    saveEmploymentContext,
+  } = useEmploymentContext();
+
+  const [whatsappForm, setWhatsappForm] = useState({
+    phone_number: '',
+    notifications_enabled: true,
+  });
+  const [whatsappSaving, setWhatsappSaving] = useState(false);
+  const [employmentForm, setEmploymentForm] = useState({
+    is_full_time_employee: false,
+    monthly_salary_net: '',
+    work_hours_per_day: 8,
+    work_days_per_month: 22,
+    work_start_time: '09:00',
+    work_end_time: '17:00',
+  });
 
   const form = useForm<SettingsFormData>({
     resolver: zodResolver(settingsSchema),
@@ -46,7 +72,43 @@ const Settings = () => {
   useEffect(() => {
     checkAuth();
     fetchSettings();
+    fetchWhatsAppSettings();
   }, []);
+
+  const fetchWhatsAppSettings = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data } = await supabase
+        .from('whatsapp_settings')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (data) {
+        setWhatsappForm({
+          phone_number: data.phone_number || '',
+          notifications_enabled: data.notifications_enabled ?? true,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching WhatsApp settings:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (employmentContext) {
+      setEmploymentForm({
+        is_full_time_employee: employmentContext.is_full_time_employee,
+        monthly_salary_net: employmentContext.monthly_salary_net?.toString() ?? '',
+        work_hours_per_day: employmentContext.work_hours_per_day ?? 8,
+        work_days_per_month: employmentContext.work_days_per_month ?? 22,
+        work_start_time: employmentContext.work_start_time?.slice(0, 5) ?? '09:00',
+        work_end_time: employmentContext.work_end_time?.slice(0, 5) ?? '17:00',
+      });
+    }
+  }, [employmentContext]);
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -117,6 +179,76 @@ const Settings = () => {
     }
   };
 
+  const onSaveWhatsApp = async () => {
+    try {
+      setWhatsappSaving(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('משתמש לא מחובר');
+
+      const phone = whatsappForm.phone_number.replace(/\D/g, '');
+      const normalized = phone.startsWith('972') ? phone : phone.startsWith('0') ? '972' + phone.slice(1) : '972' + phone;
+
+      const { error } = await supabase
+        .from('whatsapp_settings')
+        .upsert(
+          {
+            user_id: user.id,
+            phone_number: normalized,
+            notifications_enabled: whatsappForm.notifications_enabled,
+          },
+          { onConflict: 'user_id' }
+        );
+
+      if (error) throw error;
+
+      toast({
+        title: 'הגדרות WhatsApp נשמרו',
+        description: 'כעת תוכל לשלוח הודעות לבוט ולקבל עדכונים',
+      });
+    } catch (error) {
+      console.error('Error saving WhatsApp:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'לא ניתן לשמור את הגדרות WhatsApp',
+        variant: 'destructive',
+      });
+    } finally {
+      setWhatsappSaving(false);
+    }
+  };
+
+  const onSaveEmployment = async () => {
+    try {
+      setEmploymentSaving(true);
+      const { error } = await saveEmploymentContext({
+        is_full_time_employee: employmentForm.is_full_time_employee,
+        monthly_salary_net: employmentForm.is_full_time_employee && employmentForm.monthly_salary_net
+          ? parseFloat(employmentForm.monthly_salary_net)
+          : null,
+        work_hours_per_day: employmentForm.work_hours_per_day,
+        work_days_per_month: employmentForm.work_days_per_month,
+        work_start_time: employmentForm.work_start_time,
+        work_end_time: employmentForm.work_end_time,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'הגדרות תעסוקה נשמרו',
+        description: 'ה-AI ישתמש במידע זה לניתוח כדאיות',
+      });
+    } catch (error) {
+      console.error('Error saving employment:', error);
+      toast({
+        title: 'שגיאה',
+        description: 'לא ניתן לשמור את הגדרות התעסוקה',
+        variant: 'destructive',
+      });
+    } finally {
+      setEmploymentSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <Layout>
@@ -129,10 +261,10 @@ const Settings = () => {
 
   return (
     <Layout>
-      <div className="max-w-4xl space-y-8">
+      <div className="max-w-4xl space-y-6 md:space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-foreground">הגדרות</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">הגדרות</h1>
           <p className="text-muted-foreground mt-1">
             נהל את ההגדרות האישיות והעסקיות שלך
           </p>
@@ -213,21 +345,221 @@ const Settings = () => {
               </CardContent>
             </Card>
 
-            {/* WhatsApp Integration Info */}
+            {/* Employment Context */}
             <Card>
               <CardHeader>
-                <CardTitle>אינטגרציית WhatsApp</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Briefcase className="w-5 h-5" />
+                  מצב תעסוקתי (למחשבון AI)
+                </CardTitle>
                 <CardDescription>
-                  הגדרות התחברות לוואטסאפ
+                  מידע זה עוזר ל-AI לחשב האם כדאי לך לקחת פרויקטים
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="bg-muted p-4 rounded-lg">
-                  <p className="text-sm text-muted-foreground">
-                    אינטגרציית WhatsApp תאפשר לך להוסיף פגישות ישירות מוואטסאפ.
-                    התכונה תהיה זמינה בקרוב!
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="is-full-time">אני עובד כשכיר במשרה מלאה</Label>
+                  <Switch
+                    id="is-full-time"
+                    checked={employmentForm.is_full_time_employee}
+                    onCheckedChange={(checked) =>
+                      setEmploymentForm((f) => ({ ...f, is_full_time_employee: !!checked }))
+                    }
+                  />
+                </div>
+
+                {employmentForm.is_full_time_employee && (
+                  <>
+                    <div>
+                      <Label htmlFor="monthly-salary">שכר נטו חודשי (₪)</Label>
+                      <Input
+                        id="monthly-salary"
+                        type="number"
+                        placeholder="17500"
+                        value={employmentForm.monthly_salary_net}
+                        onChange={(e) =>
+                          setEmploymentForm((f) => ({ ...f, monthly_salary_net: e.target.value }))
+                        }
+                        className="mt-2"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="work-hours">שעות עבודה ביום</Label>
+                        <Input
+                          id="work-hours"
+                          type="number"
+                          min={1}
+                          max={24}
+                          value={employmentForm.work_hours_per_day}
+                          onChange={(e) =>
+                            setEmploymentForm((f) => ({
+                              ...f,
+                              work_hours_per_day: parseInt(e.target.value) || 8,
+                            }))
+                          }
+                          className="mt-2"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="work-days">ימי עבודה בחודש</Label>
+                        <Input
+                          id="work-days"
+                          type="number"
+                          min={1}
+                          max={31}
+                          value={employmentForm.work_days_per_month}
+                          onChange={(e) =>
+                            setEmploymentForm((f) => ({
+                              ...f,
+                              work_days_per_month: parseInt(e.target.value) || 22,
+                            }))
+                          }
+                          className="mt-2"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="start-time">שעת התחלה</Label>
+                        <Input
+                          id="start-time"
+                          type="time"
+                          value={employmentForm.work_start_time}
+                          onChange={(e) =>
+                            setEmploymentForm((f) => ({ ...f, work_start_time: e.target.value }))
+                          }
+                          className="mt-2"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="end-time">שעת סיום</Label>
+                        <Input
+                          id="end-time"
+                          type="time"
+                          value={employmentForm.work_end_time}
+                          onChange={(e) =>
+                            setEmploymentForm((f) => ({ ...f, work_end_time: e.target.value }))
+                          }
+                          className="mt-2"
+                        />
+                      </div>
+                    </div>
+
+                    {employmentForm.monthly_salary_net && (
+                      <div className="p-4 bg-muted rounded-lg">
+                        <p className="text-sm font-medium">חישובים אוטומטיים:</p>
+                        <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+                          <p>
+                            • שכר לשעה נטו:{' '}
+                            {formatCurrency(
+                              parseFloat(employmentForm.monthly_salary_net) /
+                                Math.max(1, employmentForm.work_hours_per_day * employmentForm.work_days_per_month)
+                            )}
+                          </p>
+                          <p>
+                            • שכר יומי נטו:{' '}
+                            {formatCurrency(
+                              parseFloat(employmentForm.monthly_salary_net) /
+                                Math.max(1, employmentForm.work_days_per_month)
+                            )}
+                          </p>
+                          <p>
+                            • סך שעות בחודש:{' '}
+                            {employmentForm.work_hours_per_day * employmentForm.work_days_per_month}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={onSaveEmployment}
+                      disabled={employmentSaving || employmentLoading}
+                    >
+                      {employmentSaving && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+                      שמור הגדרות תעסוקה
+                    </Button>
+                  </>
+                )}
+
+                {!employmentForm.is_full_time_employee && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onSaveEmployment}
+                    disabled={employmentSaving || employmentLoading}
+                  >
+                    {employmentSaving && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+                    שמור
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* WhatsApp Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5" />
+                  הגדרות WhatsApp
+                </CardTitle>
+                <CardDescription>
+                  חבר את חשבון WhatsApp שלך לקבלת עדכונים והוספת פגישות ישירות מהוואטסאפ
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="whatsapp-phone">מספר טלפון (WhatsApp)</Label>
+                  <Input
+                    id="whatsapp-phone"
+                    type="tel"
+                    placeholder="+972501234567 או 0501234567"
+                    value={whatsappForm.phone_number}
+                    onChange={(e) =>
+                      setWhatsappForm((f) => ({ ...f, phone_number: e.target.value }))
+                    }
+                    className="mt-2"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    מספר הטלפון המקושר ל-WhatsApp שלך. הבוט יזהה אותך לפי מספר זה.
                   </p>
                 </div>
+
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="whatsapp-notifications">התראות WhatsApp</Label>
+                  <Switch
+                    id="whatsapp-notifications"
+                    checked={whatsappForm.notifications_enabled}
+                    onCheckedChange={(checked) =>
+                      setWhatsappForm((f) => ({ ...f, notifications_enabled: !!checked }))
+                    }
+                  />
+                </div>
+
+                <div className="bg-muted p-4 rounded-lg text-sm text-muted-foreground space-y-2">
+                  <p className="font-medium text-foreground">פקודות זמינות:</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>/stats - סטטיסטיקות החודש</li>
+                    <li>/today - פגישות היום</li>
+                    <li>/week - פגישות השבוע</li>
+                    <li>/add [פרטים] - הוספת פגישה</li>
+                    <li>/help - רשימת פקודות</li>
+                  </ul>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onSaveWhatsApp}
+                  disabled={whatsappSaving}
+                >
+                  {whatsappSaving && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+                  שמור הגדרות WhatsApp
+                </Button>
               </CardContent>
             </Card>
 

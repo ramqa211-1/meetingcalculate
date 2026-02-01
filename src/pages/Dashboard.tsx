@@ -8,6 +8,7 @@ import AddEventDialog from '@/components/dashboard/AddEventDialog';
 import { DollarSign, Calendar, Clock, TrendingUp, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
+import { useIsMobile } from '@/hooks/use-mobile';
 import backgroundImage from '@/assets/background.png';
 
 interface Event {
@@ -33,6 +34,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isAdmin, loading: authLoading } = useAuth();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     checkAuth();
@@ -140,23 +142,18 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      <div 
-        className="space-y-8"
+      <div
+        className="space-y-6 md:space-y-8 p-4 md:p-8 rounded-lg min-h-[calc(100vh-200px)] bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: `url(${backgroundImage})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-          minHeight: 'calc(100vh - 200px)',
-          padding: '2rem',
-          borderRadius: '8px',
+          backgroundImage: isMobile ? undefined : `url(${backgroundImage})`,
+          backgroundColor: isMobile ? 'hsl(var(--muted) / 0.5)' : undefined,
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-3xl font-bold text-foreground">לוח הבקרה</h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">לוח הבקרה</h1>
               {isAdmin && (
                 <div className="flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-md text-sm">
                   <Shield className="w-4 h-4" />
@@ -212,12 +209,14 @@ const Dashboard = () => {
 
         {/* Events Table */}
         <div className="space-y-4">
-          <h2 className="text-2xl font-bold text-foreground">פגישות אחרונות</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground">פגישות אחרונות</h2>
+          <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
           <EventsTable
             events={events}
             onEdit={handleEditEvent}
             onDelete={handleDeleteEvent}
           />
+          </div>
         </div>
       </div>
     </Layout>

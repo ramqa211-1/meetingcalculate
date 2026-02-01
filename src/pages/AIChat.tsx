@@ -174,8 +174,8 @@ const AIChat = () => {
         {/* Header */}
         <div>
           <div className="flex items-center gap-2">
-            <Bot className="w-8 h-8 text-primary" />
-            <h1 className="text-3xl font-bold text-foreground">צ'אט AI</h1>
+            <Bot className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">צ'אט AI</h1>
           </div>
           <p className="text-muted-foreground mt-1">
             שאל שאלות על הפגישות, ההכנסות והפרויקטים שלך
@@ -183,7 +183,7 @@ const AIChat = () => {
         </div>
 
         {/* Chat Container */}
-        <Card className="h-[600px] flex flex-col">
+        <Card className="h-[calc(100vh-200px)] md:h-[600px] flex flex-col">
           <CardHeader className="border-b">
             <CardTitle className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-primary" />
@@ -252,7 +252,7 @@ const AIChat = () => {
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder="שאל שאלה... (Enter לשליחה, Shift+Enter לשורה חדשה)"
-                  className="min-h-[60px] resize-none"
+                  className="min-h-[50px] sm:min-h-[60px] resize-none"
                   disabled={loading}
                 />
                 <Button
