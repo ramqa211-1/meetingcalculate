@@ -1,17 +1,26 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useAuth } from '@/hooks/use-auth';
 import Layout from '@/components/Layout';
 import KPICard from '@/components/dashboard/KPICard';
 import AIInsightsCard from '@/components/dashboard/AIInsightsCard';
 import { useEmploymentContext } from '@/hooks/use-employment-context';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { DollarSign, Calendar, Clock, TrendingUp, Shield } from 'lucide-react';
+import { DollarSign, Calendar, Clock, TrendingUp, Shield, Download } from 'lucide-react';
+import { exportToJSON, exportToCSV } from '@/lib/export';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, Pie, PieChart as RePieChart, Cell } from 'recharts';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { he } from 'date-fns/locale';
-import { useAuth } from '@/hooks/use-auth';
 
 interface Event {
   id: string;
@@ -33,41 +42,39 @@ const Reports = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-  const { isAdmin, loading: authLoading } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const { employmentContext } = useEmploymentContext();
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    checkAuth();
-    fetchMonthlyEvents();
-  }, []);
-
-  useEffect(() => {
-    if (!authLoading) {
+    if (!authLoading && !user) {
+      navigate('/auth');
+      return;
+    }
+    if (user) {
       fetchMonthlyEvents();
     }
-  }, [isAdmin, authLoading]);
+  }, [user, authLoading, navigate]);
 
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      navigate('/auth');
+  useEffect(() => {
+    if (!authLoading && user) {
+      fetchMonthlyEvents();
     }
-  };
+  }, [isAdmin, authLoading, user]);
 
   const fetchMonthlyEvents = async () => {
+    if (!user) return;
     try {
       const start = format(startOfMonth(new Date()), 'yyyy-MM-dd');
       const end = format(endOfMonth(new Date()), 'yyyy-MM-dd');
-
-      const { data, error } = await supabase
-        .from('events')
-        .select('*')
-        .gte('date', start)
-        .lte('date', end);
-
-      if (error) throw error;
-      setEvents(data || []);
+      const q = query(
+        collection(db, 'users', user.uid, 'events'),
+        where('date', '>=', start),
+        where('date', '<=', end)
+      );
+      const snapshot = await getDocs(q);
+      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Event));
+      setEvents(data);
     } catch (error) {
       console.error('Error fetching events:', error);
     } finally {
@@ -83,7 +90,6 @@ const Reports = () => {
     const unpaidRevenue = totalRevenue - paidRevenue;
     const totalHours = events.reduce((sum, event) => sum + event.duration_hours, 0);
     const avgRate = totalHours > 0 ? totalRevenue / totalHours : 0;
-
     return {
       totalRevenue,
       paidRevenue,
@@ -96,34 +102,23 @@ const Reports = () => {
 
   const getEventTypeData = () => {
     const typeMap = new Map<string, number>();
-    
     events.forEach((event) => {
       const current = typeMap.get(event.event_type) || 0;
       typeMap.set(event.event_type, current + event.total_amount);
     });
-
-    return Array.from(typeMap.entries()).map(([name, value]) => ({
-      name,
-      value,
-    }));
+    return Array.from(typeMap.entries()).map(([name, value]) => ({ name, value }));
   };
 
   const getWeeklyData = () => {
     const weekMap = new Map<string, number>();
-    
     events.forEach((event) => {
       const date = new Date(event.date);
       const weekNum = Math.floor(date.getDate() / 7) + 1;
       const weekKey = `שבוע ${weekNum}`;
-      
       const current = weekMap.get(weekKey) || 0;
       weekMap.set(weekKey, current + event.total_amount);
     });
-
-    return Array.from(weekMap.entries()).map(([name, revenue]) => ({
-      name,
-      revenue,
-    }));
+    return Array.from(weekMap.entries()).map(([name, revenue]) => ({ name, revenue }));
   };
 
   const kpis = calculateKPIs();
@@ -150,7 +145,6 @@ const Reports = () => {
   return (
     <Layout>
       <div className="space-y-6 md:space-y-8">
-        {/* Header */}
         <div>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground">דוח חודשי</h1>
@@ -165,9 +159,26 @@ const Reports = () => {
             {format(new Date(), 'MMMM yyyy', { locale: he })}
             {isAdmin && ' - כל האירועים במערכת'}
           </p>
+          <div className="mt-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Download className="w-4 h-4" />
+                  ייצוא נתונים
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => exportToJSON(events, 'events-monthly')}>
+                  JSON
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportToCSV(events as Record<string, unknown>[], 'events-monthly')}>
+                  CSV
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
-        {/* AI Insights */}
         <AIInsightsCard
           events={events}
           kpis={kpis}
@@ -175,7 +186,6 @@ const Reports = () => {
           formatCurrency={formatCurrency}
         />
 
-        {/* KPIs */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <KPICard
             title="הכנסה צפויה החודש"
@@ -207,9 +217,7 @@ const Reports = () => {
           />
         </div>
 
-        {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Weekly Revenue Chart */}
           <Card>
             <CardHeader>
               <CardTitle>הכנסות לפי שבוע</CardTitle>
@@ -217,11 +225,7 @@ const Reports = () => {
             <CardContent>
               <ResponsiveContainer width="100%" height={isMobile ? 250 : 300}>
                 <BarChart data={weeklyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                  <XAxis
-                    dataKey="name"
-                    tick={{ fontSize: 12 }}
-                    angle={0}
-                  />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} angle={0} />
                   <YAxis
                     tick={{ fontSize: 12 }}
                     tickFormatter={(value) => {
@@ -240,18 +244,12 @@ const Reports = () => {
                     labelStyle={{ color: 'hsl(var(--foreground))' }}
                   />
                   <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                  <Bar
-                    dataKey="revenue"
-                    fill="hsl(243, 75%, 59%)"
-                    name="הכנסה"
-                    radius={[8, 8, 0, 0]}
-                  />
+                  <Bar dataKey="revenue" fill="hsl(243, 75%, 59%)" name="הכנסה" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
-          {/* Event Type Distribution */}
           <Card>
             <CardHeader>
               <CardTitle>חלוקה לפי סוג שירות</CardTitle>
@@ -264,9 +262,7 @@ const Reports = () => {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent }) =>
-                      percent > 0.05 ? `${name} (${(percent * 100).toFixed(0)}%)` : ''
-                    }
+                    label={({ name, percent }) => (percent > 0.05 ? `${name} (${(percent * 100).toFixed(0)}%)` : '')}
                     outerRadius={100}
                     innerRadius={60}
                     fill="#8884d8"
@@ -284,19 +280,13 @@ const Reports = () => {
                       borderRadius: '6px',
                     }}
                   />
-                  <Legend
-                    layout="horizontal"
-                    align="center"
-                    verticalAlign="bottom"
-                    wrapperStyle={{ paddingTop: '20px' }}
-                  />
+                  <Legend layout="horizontal" align="center" verticalAlign="bottom" wrapperStyle={{ paddingTop: '20px' }} />
                 </RePieChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
         </div>
 
-        {/* Additional Stats */}
         <Card>
           <CardHeader>
             <CardTitle>סטטיסטיקות נוספות</CardTitle>
@@ -304,9 +294,7 @@ const Reports = () => {
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
               <div className="text-center">
-                <p className="text-2xl font-bold text-primary">
-                  {formatCurrency(kpis.unpaidRevenue)}
-                </p>
+                <p className="text-2xl font-bold text-primary">{formatCurrency(kpis.unpaidRevenue)}</p>
                 <p className="text-sm text-muted-foreground mt-1">ממתין לתשלום</p>
               </div>
               <div className="text-center">

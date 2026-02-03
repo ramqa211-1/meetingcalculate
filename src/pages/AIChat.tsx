@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useAuth } from '@/hooks/use-auth';
+import { callOpenAI } from '@/lib/openai';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth';
 import { Bot, Send, Loader2, Sparkles } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -23,18 +25,24 @@ const AIChat = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isAdmin } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    checkAuth();
-    // Add welcome message
+    if (!authLoading && !user) {
+      navigate('/auth');
+      return;
+    }
+  }, [user, authLoading, navigate]);
+
+  useEffect(() => {
     setMessages([
       {
         id: 'welcome',
         role: 'assistant',
-        content: 'שלום! אני עוזר AI שלך. איך אוכל לעזור לך היום?\n\nאפשר לשאול אותי שאלות כמו:\n- מה התשלום הצפוי בסוף החודש?\n- איזה הרצאות יש לי השבוע?\n- איזה לקוחות ממתינים לתשלום?',
+        content:
+          'שלום! אני עוזר AI שלך. איך אוכל לעזור לך היום?\n\nאפשר לשאול אותי שאלות כמו:\n- מה התשלום הצפוי בסוף החודש?\n- איזה הרצאות יש לי השבוע?\n- איזה לקוחות ממתינים לתשלום?',
         timestamp: new Date(),
       },
     ]);
@@ -44,15 +52,8 @@ const AIChat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      navigate('/auth');
-    }
-  };
-
   const handleSend = async () => {
-    if (!input.trim() || loading) return;
+    if (!input.trim() || loading || !user) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -60,40 +61,44 @@ const AIChat = () => {
       content: input.trim(),
       timestamp: new Date(),
     };
-
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setLoading(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('לא מחובר');
-
-      // Call AI chat function
-      const { data, error } = await supabase.functions.invoke('ai-chat', {
-        body: {
-          message: userMessage.content,
-          messages: messages.map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
+      const openAiMessages = [
+        {
+          role: 'system',
+          content:
+            'אתה עוזר לניהול פגישות והכנסות. ענה בעברית. אם המשתמש מבקש ליצור/לערוך/למחוק פגישה, החזר JSON עם action: { type: "CREATE_EVENT"|"UPDATE_EVENT"|"DELETE_EVENT", data: {...} }. אחרת החזר רק תשובה טקסטואלית.',
         },
-      });
+        ...messages.map((m) => ({ role: m.role, content: m.content })),
+        { role: 'user', content: userMessage.content },
+      ];
 
-      if (error) throw error;
+      const { response } = await callOpenAI(openAiMessages);
+      let content = response;
+      let action: { type: string; data: unknown } | null = null;
+      try {
+        const parsed = JSON.parse(response);
+        if (parsed.action) {
+          action = parsed.action;
+          content = parsed.response || parsed.message || 'בוצע.';
+        }
+      } catch {
+        // not JSON, use as text
+      }
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: data.response || 'לא הצלחתי לענות',
+        content,
         timestamp: new Date(),
       };
-
       setMessages((prev) => [...prev, assistantMessage]);
 
-      // Handle actions if any
-      if (data.action && isAdmin) {
-        await handleAction(data.action);
+      if (action && isAdmin) {
+        await handleAction(action);
       }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -102,7 +107,6 @@ const AIChat = () => {
         description: 'לא ניתן לשלוח הודעה. נסה שוב.',
         variant: 'destructive',
       });
-
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -116,40 +120,27 @@ const AIChat = () => {
   };
 
   const handleAction = async (action: { type: string; data: any }) => {
+    if (!user) return;
     try {
       switch (action.type) {
-        case 'CREATE_EVENT':
-          const { error: createError } = await supabase
-            .from('events')
-            .insert(action.data);
-          if (createError) throw createError;
-          toast({
-            title: 'פגישה נוצרה',
-            description: 'הפגישה נוספה בהצלחה',
-          });
+        case 'CREATE_EVENT': {
+          await addDoc(collection(db, 'users', user.uid, 'events'), action.data);
+          toast({ title: 'פגישה נוצרה', description: 'הפגישה נוספה בהצלחה' });
           break;
-        case 'UPDATE_EVENT':
-          const { error: updateError } = await supabase
-            .from('events')
-            .update(action.data.updates)
-            .eq('id', action.data.id);
-          if (updateError) throw updateError;
-          toast({
-            title: 'פגישה עודכנה',
-            description: 'הפגישה עודכנה בהצלחה',
-          });
+        }
+        case 'UPDATE_EVENT': {
+          await updateDoc(
+            doc(db, 'users', user.uid, 'events', action.data.id),
+            action.data.updates
+          );
+          toast({ title: 'פגישה עודכנה', description: 'הפגישה עודכנה בהצלחה' });
           break;
-        case 'DELETE_EVENT':
-          const { error: deleteError } = await supabase
-            .from('events')
-            .delete()
-            .eq('id', action.data.id);
-          if (deleteError) throw deleteError;
-          toast({
-            title: 'פגישה נמחקה',
-            description: 'הפגישה הוסרה בהצלחה',
-          });
+        }
+        case 'DELETE_EVENT': {
+          await deleteDoc(doc(db, 'users', user.uid, 'events', action.data.id));
+          toast({ title: 'פגישה נמחקה', description: 'הפגישה הוסרה בהצלחה' });
           break;
+        }
       }
     } catch (error) {
       console.error('Error handling action:', error);
@@ -168,10 +159,13 @@ const AIChat = () => {
     }
   };
 
+  if (!user) {
+    return null;
+  }
+
   return (
     <Layout>
       <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
         <div>
           <div className="flex items-center gap-2">
             <Bot className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
@@ -182,7 +176,6 @@ const AIChat = () => {
           </p>
         </div>
 
-        {/* Chat Container */}
         <Card className="h-[calc(100vh-200px)] md:h-[600px] flex flex-col">
           <CardHeader className="border-b">
             <CardTitle className="flex items-center gap-2">
@@ -250,7 +243,7 @@ const AIChat = () => {
                 <Textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  onKeyPress={handleKeyPress}
+                  onKeyDown={handleKeyPress}
                   placeholder="שאל שאלה... (Enter לשליחה, Shift+Enter לשורה חדשה)"
                   className="min-h-[50px] sm:min-h-[60px] resize-none"
                   disabled={loading}

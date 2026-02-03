@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { supabase } from '@/integrations/supabase/client';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useAuth } from '@/hooks/use-auth';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,6 +42,7 @@ const Settings = () => {
   const [employmentSaving, setEmploymentSaving] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, loading: authLoading } = useAuth();
   const {
     employmentContext,
     loading: employmentLoading,
@@ -70,26 +73,26 @@ const Settings = () => {
   });
 
   useEffect(() => {
-    checkAuth();
-    fetchSettings();
-    fetchWhatsAppSettings();
-  }, []);
+    if (!authLoading && !user) {
+      navigate('/auth');
+      return;
+    }
+    if (user) {
+      fetchSettings();
+      fetchWhatsAppSettings();
+    }
+  }, [user, authLoading, navigate]);
 
   const fetchWhatsAppSettings = async () => {
+    if (!user) return;
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data } = await supabase
-        .from('whatsapp_settings')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (data) {
+      const ref = doc(db, 'users', user.uid, 'whatsapp_settings', '_');
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        const d = snap.data();
         setWhatsappForm({
-          phone_number: data.phone_number || '',
-          notifications_enabled: data.notifications_enabled ?? true,
+          phone_number: d.phone_number || '',
+          notifications_enabled: d.notifications_enabled ?? true,
         });
       }
     } catch (error) {
@@ -110,31 +113,17 @@ const Settings = () => {
     }
   }, [employmentContext]);
 
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      navigate('/auth');
-    }
-  };
-
   const fetchSettings = async () => {
+    if (!user) return;
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from('user_settings')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116') throw error;
-
-      if (data) {
+      const ref = doc(db, 'users', user.uid, 'settings');
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        const d = snap.data();
         form.reset({
-          business_name: data.business_name || '',
-          default_hourly_rate: data.default_hourly_rate?.toString() || '300',
-          default_fixed_rate: data.default_fixed_rate?.toString() || '500',
+          business_name: d.business_name || '',
+          default_hourly_rate: d.default_hourly_rate?.toString() || '300',
+          default_fixed_rate: d.default_fixed_rate?.toString() || '500',
         });
       }
     } catch (error) {
@@ -145,24 +134,18 @@ const Settings = () => {
   };
 
   const onSubmit = async (data: SettingsFormData) => {
+    if (!user) return;
     try {
       setSaving(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('משתמש לא מחובר');
-
-      const { error } = await supabase
-        .from('user_settings')
-        .upsert({
-          user_id: user.id,
+      await setDoc(
+        doc(db, 'users', user.uid, 'settings', '_'),
+        {
           business_name: data.business_name || null,
           default_hourly_rate: parseFloat(data.default_hourly_rate),
           default_fixed_rate: parseFloat(data.default_fixed_rate),
-        }, {
-          onConflict: 'user_id'
-        });
-
-      if (error) throw error;
-
+        },
+        { merge: true }
+      );
       toast({
         title: 'הגדרות נשמרו בהצלחה',
         description: 'השינויים שלך נשמרו במערכת',
@@ -180,27 +163,23 @@ const Settings = () => {
   };
 
   const onSaveWhatsApp = async () => {
+    if (!user) return;
     try {
       setWhatsappSaving(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('משתמש לא מחובר');
-
       const phone = whatsappForm.phone_number.replace(/\D/g, '');
-      const normalized = phone.startsWith('972') ? phone : phone.startsWith('0') ? '972' + phone.slice(1) : '972' + phone;
-
-      const { error } = await supabase
-        .from('whatsapp_settings')
-        .upsert(
-          {
-            user_id: user.id,
-            phone_number: normalized,
-            notifications_enabled: whatsappForm.notifications_enabled,
-          },
-          { onConflict: 'user_id' }
-        );
-
-      if (error) throw error;
-
+      const normalized = phone.startsWith('972')
+        ? phone
+        : phone.startsWith('0')
+          ? '972' + phone.slice(1)
+          : '972' + phone;
+      await setDoc(
+        doc(db, 'users', user.uid, 'whatsapp_settings', '_'),
+        {
+          phone_number: normalized,
+          notifications_enabled: whatsappForm.notifications_enabled,
+        },
+        { merge: true }
+      );
       toast({
         title: 'הגדרות WhatsApp נשמרו',
         description: 'כעת תוכל לשלוח הודעות לבוט ולקבל עדכונים',
@@ -222,17 +201,16 @@ const Settings = () => {
       setEmploymentSaving(true);
       const { error } = await saveEmploymentContext({
         is_full_time_employee: employmentForm.is_full_time_employee,
-        monthly_salary_net: employmentForm.is_full_time_employee && employmentForm.monthly_salary_net
-          ? parseFloat(employmentForm.monthly_salary_net)
-          : null,
+        monthly_salary_net:
+          employmentForm.is_full_time_employee && employmentForm.monthly_salary_net
+            ? parseFloat(employmentForm.monthly_salary_net)
+            : null,
         work_hours_per_day: employmentForm.work_hours_per_day,
         work_days_per_month: employmentForm.work_days_per_month,
         work_start_time: employmentForm.work_start_time,
         work_end_time: employmentForm.work_end_time,
       });
-
       if (error) throw error;
-
       toast({
         title: 'הגדרות תעסוקה נשמרו',
         description: 'ה-AI ישתמש במידע זה לניתוח כדאיות',
@@ -249,7 +227,7 @@ const Settings = () => {
     }
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <Layout>
         <div className="flex items-center justify-center h-64">
@@ -262,23 +240,17 @@ const Settings = () => {
   return (
     <Layout>
       <div className="max-w-4xl space-y-6 md:space-y-8">
-        {/* Header */}
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground">הגדרות</h1>
-          <p className="text-muted-foreground mt-1">
-            נהל את ההגדרות האישיות והעסקיות שלך
-          </p>
+          <p className="text-muted-foreground mt-1">נהל את ההגדרות האישיות והעסקיות שלך</p>
         </div>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Business Settings */}
             <Card>
               <CardHeader>
                 <CardTitle>הגדרות עסק</CardTitle>
-                <CardDescription>
-                  מידע כללי על העסק שלך
-                </CardDescription>
+                <CardDescription>מידע כללי על העסק שלך</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
@@ -290,9 +262,7 @@ const Settings = () => {
                       <FormControl>
                         <Input placeholder="השם שלי בע״מ" {...field} />
                       </FormControl>
-                      <FormDescription>
-                        שם העסק יופיע בדוחות ובמסמכים
-                      </FormDescription>
+                      <FormDescription>שם העסק יופיע בדוחות ובמסמכים</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -300,13 +270,10 @@ const Settings = () => {
               </CardContent>
             </Card>
 
-            {/* Pricing Settings */}
             <Card>
               <CardHeader>
                 <CardTitle>הגדרות תמחור</CardTitle>
-                <CardDescription>
-                  מחירי ברירת מחדל לפגישות חדשות
-                </CardDescription>
+                <CardDescription>מחירי ברירת מחדל לפגישות חדשות</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
@@ -325,7 +292,6 @@ const Settings = () => {
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="default_fixed_rate"
@@ -345,16 +311,13 @@ const Settings = () => {
               </CardContent>
             </Card>
 
-            {/* Employment Context */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Briefcase className="w-5 h-5" />
                   מצב תעסוקתי (למחשבון AI)
                 </CardTitle>
-                <CardDescription>
-                  מידע זה עוזר ל-AI לחשב האם כדאי לך לקחת פרויקטים
-                </CardDescription>
+                <CardDescription>מידע זה עוזר ל-AI לחשב האם כדאי לך לקחת פרויקטים</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -383,7 +346,6 @@ const Settings = () => {
                         className="mt-2"
                       />
                     </div>
-
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="work-hours">שעות עבודה ביום</Label>
@@ -420,7 +382,6 @@ const Settings = () => {
                         />
                       </div>
                     </div>
-
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="start-time">שעת התחלה</Label>
@@ -447,7 +408,6 @@ const Settings = () => {
                         />
                       </div>
                     </div>
-
                     {employmentForm.monthly_salary_net && (
                       <div className="p-4 bg-muted rounded-lg">
                         <p className="text-sm font-medium">חישובים אוטומטיים:</p>
@@ -456,7 +416,10 @@ const Settings = () => {
                             • שכר לשעה נטו:{' '}
                             {formatCurrency(
                               parseFloat(employmentForm.monthly_salary_net) /
-                                Math.max(1, employmentForm.work_hours_per_day * employmentForm.work_days_per_month)
+                                Math.max(
+                                  1,
+                                  employmentForm.work_hours_per_day * employmentForm.work_days_per_month
+                                )
                             )}
                           </p>
                           <p>
@@ -473,7 +436,6 @@ const Settings = () => {
                         </div>
                       </div>
                     )}
-
                     <Button
                       type="button"
                       variant="outline"
@@ -500,7 +462,6 @@ const Settings = () => {
               </CardContent>
             </Card>
 
-            {/* WhatsApp Settings */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -528,7 +489,6 @@ const Settings = () => {
                     מספר הטלפון המקושר ל-WhatsApp שלך. הבוט יזהה אותך לפי מספר זה.
                   </p>
                 </div>
-
                 <div className="flex items-center justify-between">
                   <Label htmlFor="whatsapp-notifications">התראות WhatsApp</Label>
                   <Switch
@@ -539,7 +499,6 @@ const Settings = () => {
                     }
                   />
                 </div>
-
                 <div className="bg-muted p-4 rounded-lg text-sm text-muted-foreground space-y-2">
                   <p className="font-medium text-foreground">פקודות זמינות:</p>
                   <ul className="list-disc list-inside space-y-1">
@@ -550,7 +509,6 @@ const Settings = () => {
                     <li>/help - רשימת פקודות</li>
                   </ul>
                 </div>
-
                 <Button
                   type="button"
                   variant="outline"

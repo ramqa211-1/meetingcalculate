@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useAuth } from '@/hooks/use-auth';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth';
-import { Shield, User, UserPlus, Loader2 } from 'lucide-react';
+import { Shield, Loader2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -29,7 +30,7 @@ interface Profile {
   email: string | null;
   full_name: string | null;
   role: 'user' | 'admin';
-  created_at: string | null;
+  created_at?: string | null;
 }
 
 const Admin = () => {
@@ -52,17 +53,13 @@ const Admin = () => {
       }
       fetchProfiles();
     }
-  }, [isAdmin, authLoading, navigate]);
+  }, [isAdmin, authLoading, navigate, toast]);
 
   const fetchProfiles = async () => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setProfiles(data || []);
+      const snapshot = await getDocs(collection(db, 'profiles'));
+      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Profile));
+      setProfiles(data);
     } catch (error) {
       console.error('Error fetching profiles:', error);
       toast({
@@ -77,18 +74,14 @@ const Admin = () => {
 
   const updateUserRole = async (userId: string, newRole: 'user' | 'admin') => {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ role: newRole })
-        .eq('id', userId);
-
-      if (error) throw error;
-
+      const profileRef = doc(db, 'users', userId, 'profile', '_');
+      const profileListRef = doc(db, 'profiles', userId);
+      await setDoc(profileRef, { role: newRole }, { merge: true });
+      await setDoc(profileListRef, { role: newRole }, { merge: true });
       toast({
         title: 'התפקיד עודכן',
         description: `התפקיד שונה ל-${newRole === 'admin' ? 'אדמין' : 'משתמש'}`,
       });
-
       fetchProfiles();
     } catch (error) {
       console.error('Error updating role:', error);
@@ -114,24 +107,20 @@ const Admin = () => {
     return null;
   }
 
-  const adminCount = profiles.filter(p => p.role === 'admin').length;
-  const userCount = profiles.filter(p => p.role === 'user').length;
+  const adminCount = profiles.filter((p) => p.role === 'admin').length;
+  const userCount = profiles.filter((p) => p.role === 'user').length;
 
   return (
     <Layout>
       <div className="space-y-6 md:space-y-8">
-        {/* Header */}
         <div>
           <div className="flex items-center gap-2">
             <Shield className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground">ניהול משתמשים</h1>
           </div>
-          <p className="text-muted-foreground mt-1">
-            נהל תפקידי משתמשים והרשאות במערכת
-          </p>
+          <p className="text-muted-foreground mt-1">נהל תפקידי משתמשים והרשאות במערכת</p>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardHeader className="pb-3">
@@ -159,13 +148,10 @@ const Admin = () => {
           </Card>
         </div>
 
-        {/* Users Table */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg sm:text-xl">רשימת משתמשים</CardTitle>
-            <CardDescription>
-              ניתן לשנות תפקידים ולנהל הרשאות
-            </CardDescription>
+            <CardDescription>ניתן לשנות תפקידים ולנהל הרשאות</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>

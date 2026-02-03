@@ -30,3 +30,4 @@ dist-ssr
 
 # Testing/development files
 .playwright-mcp/
+.env.example

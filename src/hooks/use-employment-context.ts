@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 import type { EmploymentContext, EmploymentCalculations } from '@/types/employment';
 
 export function useEmploymentContext() {
@@ -8,20 +9,18 @@ export function useEmploymentContext() {
 
   const fetchEmploymentContext = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) {
         setEmploymentContext(null);
         return;
       }
-
-      const { data, error } = await supabase
-        .from('employment_context')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (error) throw error;
-      setEmploymentContext(data);
+      const ref = doc(db, 'users', user.uid, 'employment_context', '_');
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        setEmploymentContext({ id: snap.id, user_id: user.uid, ...snap.data() } as EmploymentContext);
+      } else {
+        setEmploymentContext(null);
+      }
     } catch (error) {
       console.error('Error fetching employment context:', error);
       setEmploymentContext(null);
@@ -36,20 +35,10 @@ export function useEmploymentContext() {
 
   const saveEmploymentContext = async (data: Partial<EmploymentContext>) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) throw new Error('משתמש לא מחובר');
-
-      const { error } = await supabase
-        .from('employment_context')
-        .upsert(
-          {
-            user_id: user.id,
-            ...data,
-          },
-          { onConflict: 'user_id' }
-        );
-
-      if (error) throw error;
+      const ref = doc(db, 'users', user.uid, 'employment_context', '_');
+      await setDoc(ref, { user_id: user.uid, ...data }, { merge: true });
       await fetchEmploymentContext();
       return { success: true };
     } catch (error) {
@@ -62,12 +51,10 @@ export function useEmploymentContext() {
     if (!employmentContext?.is_full_time_employee || !employmentContext.monthly_salary_net) {
       return null;
     }
-
     const monthlyHours =
       employmentContext.work_hours_per_day * employmentContext.work_days_per_month;
     const hourlyRate = employmentContext.monthly_salary_net / monthlyHours;
     const dailyWage = employmentContext.monthly_salary_net / employmentContext.work_days_per_month;
-
     return {
       hourly_rate_net: hourlyRate,
       daily_wage_net: dailyWage,

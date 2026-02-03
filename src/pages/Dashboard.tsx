@@ -1,13 +1,22 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { collection, query, orderBy, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useAuth } from '@/hooks/use-auth';
 import Layout from '@/components/Layout';
 import KPICard from '@/components/dashboard/KPICard';
 import EventsTable from '@/components/dashboard/EventsTable';
 import AddEventDialog from '@/components/dashboard/AddEventDialog';
-import { DollarSign, Calendar, Clock, TrendingUp, Shield } from 'lucide-react';
+import { DollarSign, Calendar, Clock, TrendingUp, Shield, Download } from 'lucide-react';
+import { exportToJSON, exportToCSV } from '@/lib/export';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import backgroundImage from '@/assets/background.png';
 
@@ -33,36 +42,35 @@ const Dashboard = () => {
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { isAdmin, loading: authLoading } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    checkAuth();
-    fetchEvents();
-  }, []);
-
-  useEffect(() => {
-    if (!authLoading) {
+    if (!authLoading && !user) {
+      navigate('/auth');
+      return;
+    }
+    if (user) {
       fetchEvents();
     }
-  }, [isAdmin, authLoading]);
+  }, [user, authLoading, navigate]);
 
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      navigate('/auth');
+  useEffect(() => {
+    if (!authLoading && user) {
+      fetchEvents();
     }
-  };
+  }, [isAdmin, authLoading, user]);
 
   const fetchEvents = async () => {
+    if (!user) return;
     try {
-      const { data, error } = await supabase
-        .from('events')
-        .select('*')
-        .order('date', { ascending: false });
-
-      if (error) throw error;
-      setEvents(data || []);
+      const q = query(
+        collection(db, 'users', user.uid, 'events'),
+        orderBy('date', 'desc')
+      );
+      const snapshot = await getDocs(q);
+      const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Event));
+      setEvents(data);
     } catch (error) {
       console.error('Error fetching events:', error);
       toast({
@@ -85,10 +93,9 @@ const Dashboard = () => {
   };
 
   const handleDeleteEvent = async (id: string) => {
+    if (!user) return;
     try {
-      const { error } = await supabase.from('events').delete().eq('id', id);
-      if (error) throw error;
-
+      await deleteDoc(doc(db, 'users', user.uid, 'events', id));
       toast({
         title: 'הפגישה נמחקה',
         description: 'הפגישה הוסרה מהמערכת',
@@ -111,7 +118,6 @@ const Dashboard = () => {
       .reduce((sum, event) => sum + event.total_amount, 0);
     const unpaidRevenue = totalRevenue - paidRevenue;
     const totalHours = events.reduce((sum, event) => sum + event.duration_hours, 0);
-
     return {
       totalRevenue,
       paidRevenue,
@@ -149,7 +155,6 @@ const Dashboard = () => {
           backgroundColor: isMobile ? 'hsl(var(--muted) / 0.5)' : undefined,
         }}
       >
-        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <div className="flex flex-wrap items-center gap-2">
@@ -162,20 +167,36 @@ const Dashboard = () => {
               )}
             </div>
             <p className="text-muted-foreground mt-1">
-              {isAdmin 
+              {isAdmin
                 ? 'סקירה מלאה של כל הפגישות וההכנסות במערכת'
-                : 'סקירה מלאה של הפגישות וההכנסות שלך'
-              }
+                : 'סקירה מלאה של הפגישות וההכנסות שלך'}
             </p>
           </div>
-          <AddEventDialog 
-            editEvent={editingEvent} 
-            onEditComplete={handleEditComplete}
-            onEventAdded={fetchEvents}
-          />
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <Download className="w-4 h-4" />
+                  ייצוא נתונים
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => exportToJSON(events, 'events')}>
+                  JSON
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportToCSV(events as Record<string, unknown>[], 'events')}>
+                  CSV
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <AddEventDialog
+              editEvent={editingEvent}
+              onEditComplete={handleEditComplete}
+              onEventAdded={fetchEvents}
+            />
+          </div>
         </div>
 
-        {/* KPIs */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <KPICard
             title="הכנסה כוללת"
@@ -207,15 +228,14 @@ const Dashboard = () => {
           />
         </div>
 
-        {/* Events Table */}
         <div className="space-y-4">
           <h2 className="text-xl sm:text-2xl font-bold text-foreground">פגישות אחרונות</h2>
           <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-          <EventsTable
-            events={events}
-            onEdit={handleEditEvent}
-            onDelete={handleDeleteEvent}
-          />
+            <EventsTable
+              events={events}
+              onEdit={handleEditEvent}
+              onDelete={handleDeleteEvent}
+            />
           </div>
         </div>
       </div>

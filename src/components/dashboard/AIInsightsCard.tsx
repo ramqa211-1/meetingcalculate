@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { callOpenAI } from '@/lib/openai';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Bot, Loader2, RefreshCw } from 'lucide-react';
@@ -48,34 +48,29 @@ const AIInsightsCard = ({
     setLoading(true);
     setError(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('לא מחובר');
-
-      const { data, error: fnError } = await supabase.functions.invoke('ai-chat', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: {
-          type: 'generate_insights',
-          events,
-          kpis,
-          employmentContext: employmentContext
-            ? {
-                is_full_time_employee: employmentContext.is_full_time_employee,
-                monthly_salary_net: employmentContext.monthly_salary_net,
-                work_hours_per_day: employmentContext.work_hours_per_day,
-                work_days_per_month: employmentContext.work_days_per_month,
-                work_start_time: employmentContext.work_start_time,
-                work_end_time: employmentContext.work_end_time,
-              }
-            : null,
-        },
+      const systemContent = `אתה יועץ פיננסי. נתח את הנתונים החודשיים (אירועים, KPIs) והחזר תובנות קצרות בעברית.
+כלול: סיכום הכנסות, השוואה לתשלום צפוי, והמלצה אחת קצרה.`;
+      const userContent = JSON.stringify({
+        type: 'generate_insights',
+        events,
+        kpis,
+        employmentContext: employmentContext
+          ? {
+              is_full_time_employee: employmentContext.is_full_time_employee,
+              monthly_salary_net: employmentContext.monthly_salary_net,
+              work_hours_per_day: employmentContext.work_hours_per_day,
+              work_days_per_month: employmentContext.work_days_per_month,
+              work_start_time: employmentContext.work_start_time,
+              work_end_time: employmentContext.work_end_time,
+            }
+          : null,
       });
 
-      if (fnError) throw fnError;
-      if (data?.error) throw new Error(data.error);
-
-      setInsights(data?.response || 'לא התקבלו תובנות');
+      const { response } = await callOpenAI([
+        { role: 'system', content: systemContent },
+        { role: 'user', content: userContent },
+      ]);
+      setInsights(response || 'לא התקבלו תובנות');
     } catch (err) {
       console.error('Error fetching AI insights:', err);
       setError(err instanceof Error ? err.message : 'שגיאה בטעינת תובנות');
@@ -91,13 +86,15 @@ const AIInsightsCard = ({
     }
   }, []);
 
-  const calculations = employmentContext?.is_full_time_employee && employmentContext.monthly_salary_net
-    ? {
-        hourly: employmentContext.monthly_salary_net /
-          (employmentContext.work_hours_per_day * employmentContext.work_days_per_month),
-        daily: employmentContext.monthly_salary_net / employmentContext.work_days_per_month,
-      }
-    : null;
+  const calculations =
+    employmentContext?.is_full_time_employee && employmentContext.monthly_salary_net
+      ? {
+          hourly:
+            employmentContext.monthly_salary_net /
+            (employmentContext.work_hours_per_day * employmentContext.work_days_per_month),
+          daily: employmentContext.monthly_salary_net / employmentContext.work_days_per_month,
+        }
+      : null;
 
   return (
     <Card>
@@ -125,8 +122,14 @@ const AIInsightsCard = ({
             <p className="font-medium mb-2">המצב שלך כשכיר</p>
             <div className="space-y-1 text-muted-foreground">
               <p>• שכר נטו: {formatCurrencyProp(employmentContext.monthly_salary_net!)}/חודש</p>
-              <p>• שווי השעה: {formatCurrencyProp(calculations.hourly)} | שווי יום: {formatCurrencyProp(calculations.daily)}</p>
-              <p>• שעות עבודה: {employmentContext.work_start_time?.slice(0, 5)}-{employmentContext.work_end_time?.slice(0, 5)}</p>
+              <p>
+                • שווי השעה: {formatCurrencyProp(calculations.hourly)} | שווי יום:{' '}
+                {formatCurrencyProp(calculations.daily)}
+              </p>
+              <p>
+                • שעות עבודה: {employmentContext.work_start_time?.slice(0, 5)}-
+                {employmentContext.work_end_time?.slice(0, 5)}
+              </p>
             </div>
           </div>
         )}

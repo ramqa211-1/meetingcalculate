@@ -28,8 +28,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Plus } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { collection, doc, addDoc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
+import { addToGoogleCalendar, calculateEndTime } from '@/lib/google-calendar';
 
 const eventSchema = z.object({
   date: z.string().min(1, 'יש לבחור תאריך'),
@@ -70,34 +73,36 @@ interface AddEventDialogProps {
 const AddEventDialog = ({ onEventAdded, editEvent, onEditComplete }: AddEventDialogProps) => {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
   const isEditMode = !!editEvent;
 
   const form = useForm<EventFormData>({
     resolver: zodResolver(eventSchema),
-    defaultValues: editEvent ? {
-      date: editEvent.date,
-      start_time: editEvent.start_time,
-      duration_hours: editEvent.duration_hours.toString(),
-      client_name: editEvent.client_name,
-      event_type: editEvent.event_type,
-      rate_type: editEvent.rate_type as 'hourly' | 'fixed',
-      rate: editEvent.rate.toString(),
-      payment_status: editEvent.payment_status as 'paid' | 'unpaid',
-      notes: editEvent.notes || '',
-    } : {
-      date: '',
-      start_time: '',
-      duration_hours: '',
-      client_name: '',
-      event_type: '',
-      rate_type: 'hourly',
-      rate: '',
-      payment_status: 'unpaid',
-      notes: '',
-    },
+    defaultValues: editEvent
+      ? {
+          date: editEvent.date,
+          start_time: editEvent.start_time,
+          duration_hours: editEvent.duration_hours.toString(),
+          client_name: editEvent.client_name,
+          event_type: editEvent.event_type,
+          rate_type: editEvent.rate_type as 'hourly' | 'fixed',
+          rate: editEvent.rate.toString(),
+          payment_status: editEvent.payment_status as 'paid' | 'unpaid',
+          notes: editEvent.notes || '',
+        }
+      : {
+          date: '',
+          start_time: '',
+          duration_hours: '',
+          client_name: '',
+          event_type: '',
+          rate_type: 'hourly',
+          rate: '',
+          payment_status: 'unpaid',
+          notes: '',
+        },
   });
 
-  // Update form when editEvent changes
   useEffect(() => {
     if (editEvent) {
       form.reset({
@@ -116,45 +121,37 @@ const AddEventDialog = ({ onEventAdded, editEvent, onEditComplete }: AddEventDia
   }, [editEvent, form]);
 
   const onSubmit = async (data: EventFormData) => {
+    if (!user) {
+      toast({ title: 'שגיאה', description: 'משתמש לא מחובר', variant: 'destructive' });
+      return;
+    }
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('משתמש לא מחובר');
-
       const duration = parseFloat(data.duration_hours);
       const rate = parseFloat(data.rate);
       const totalAmount = data.rate_type === 'hourly' ? duration * rate : rate;
+      const eventsRef = collection(db, 'users', user.uid, 'events');
 
       if (isEditMode && editEvent) {
-        // Update existing event
-        const { error } = await supabase
-          .from('events')
-          .update({
-            date: data.date,
-            start_time: data.start_time,
-            duration_hours: duration,
-            client_name: data.client_name,
-            event_type: data.event_type,
-            rate_type: data.rate_type,
-            rate: rate,
-            total_amount: totalAmount,
-            payment_status: data.payment_status,
-            notes: data.notes,
-          })
-          .eq('id', editEvent.id);
-
-        if (error) throw error;
-
+        await updateDoc(doc(db, 'users', user.uid, 'events', editEvent.id), {
+          date: data.date,
+          start_time: data.start_time,
+          duration_hours: duration,
+          client_name: data.client_name,
+          event_type: data.event_type,
+          rate_type: data.rate_type,
+          rate: rate,
+          total_amount: totalAmount,
+          payment_status: data.payment_status,
+          notes: data.notes ?? null,
+        });
         toast({
           title: 'הפגישה עודכנה בהצלחה',
           description: `פגישה עם ${data.client_name} עודכנה במערכת`,
         });
-
         setOpen(false);
         onEditComplete?.();
       } else {
-        // Insert new event
-        const { error } = await supabase.from('events').insert({
-          user_id: user.id,
+        await addDoc(eventsRef, {
           date: data.date,
           start_time: data.start_time,
           duration_hours: duration,
@@ -165,16 +162,34 @@ const AddEventDialog = ({ onEventAdded, editEvent, onEditComplete }: AddEventDia
           total_amount: totalAmount,
           payment_status: data.payment_status,
           source: 'web',
-          notes: data.notes,
+          notes: data.notes ?? null,
         });
-
-        if (error) throw error;
-
         toast({
           title: 'הפגישה נוספה בהצלחה',
           description: `פגישה עם ${data.client_name} נוספה למערכת`,
         });
-
+        const formatCurrency = (n: number) =>
+          new Intl.NumberFormat('he-IL', { style: 'currency', currency: 'ILS' }).format(n);
+        const shouldSync = window.confirm('האם לסנכרן את הפגישה ליומן Google?');
+        if (shouldSync) {
+          try {
+            const endIso = calculateEndTime(data.date, data.start_time, duration);
+            await addToGoogleCalendar({
+              summary: `פגישה: ${data.client_name}`,
+              description: `${data.event_type} - ${formatCurrency(totalAmount)}`,
+              start: { dateTime: `${data.date}T${data.start_time}:00` },
+              end: { dateTime: endIso },
+            });
+            toast({ title: 'סנכרון יומן', description: 'הפגישה נוספה ליומן Google' });
+          } catch (err) {
+            console.error('Google Calendar sync failed:', err);
+            toast({
+              title: 'סנכרון יומן',
+              description: 'לא ניתן לסנכרן ליומן Google. ודא שהתחברת עם Google והפעלת Calendar API.',
+              variant: 'destructive',
+            });
+          }
+        }
         form.reset();
         setOpen(false);
         onEventAdded();
@@ -190,12 +205,15 @@ const AddEventDialog = ({ onEventAdded, editEvent, onEditComplete }: AddEventDia
   };
 
   return (
-    <Dialog open={open} onOpenChange={(newOpen) => {
-      setOpen(newOpen);
-      if (!newOpen && isEditMode) {
-        onEditComplete?.();
-      }
-    }}>
+    <Dialog
+      open={open}
+      onOpenChange={(newOpen) => {
+        setOpen(newOpen);
+        if (!newOpen && isEditMode) {
+          onEditComplete?.();
+        }
+      }}
+    >
       {!isEditMode && (
         <DialogTrigger asChild>
           <Button className="gap-2">

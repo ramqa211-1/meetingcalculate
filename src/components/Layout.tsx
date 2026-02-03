@@ -3,9 +3,10 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Calendar, BarChart3, Settings, LogOut, Shield, Bot, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { supabase } from '@/integrations/supabase/client';
+import { signOut } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
+import { SearchBar } from '@/components/SearchBar';
 
 interface LayoutProps {
   children: ReactNode;
@@ -19,7 +20,7 @@ const Layout = ({ children }: LayoutProps) => {
   const { isAdmin } = useAuth();
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await signOut();
     toast({
       title: 'התנתקת בהצלחה',
       description: 'נתראה בקרוב!',
@@ -110,6 +111,7 @@ const Layout = ({ children }: LayoutProps) => {
                     </Link>
                   );
                 })}
+                <SearchBar />
               </div>
             </div>
 
