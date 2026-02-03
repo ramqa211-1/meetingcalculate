@@ -47,28 +47,62 @@ async function initGoogleCalendar(): Promise<void> {
   }
 }
 
+async function ensureSignedIn(gapiInstance: typeof import('gapi-script').gapi): Promise<void> {
+  const auth = gapiInstance.auth2.getAuthInstance();
+  if (auth.isSignedIn.get()) return;
+
+  const trySignIn = (prompt?: 'consent' | 'select_account') => {
+    const options = prompt ? { prompt } : undefined;
+    return auth.signIn(options);
+  };
+
+  try {
+    await trySignIn('select_account');
+  } catch (err) {
+    const obj = err as { type?: string; error?: string };
+    if (obj?.type === 'tokenFailed' || obj?.error === 'server_error') {
+      try {
+        await trySignIn('consent');
+      } catch {
+        throw new Error(
+          'שגיאת שרת של Google. נסה: 1) לרענן את הדף ולנסות שוב 2) לאפשר חלונות קופצים 3) לבדוק שהחשבון ברשימת Test users ב-Google Cloud Console.'
+        );
+      }
+    } else {
+      throw err;
+    }
+  }
+}
+
 export async function addToGoogleCalendar(event: CalendarEventInput): Promise<unknown> {
   const { gapi } = await import('gapi-script');
-  
-  // Initialize if needed
+
   await initGoogleCalendar();
-  
-  // Check if user is signed in
-  const auth = gapi.auth2.getAuthInstance();
-  if (!auth.isSignedIn.get()) {
-    // Prompt user to sign in
-    await auth.signIn();
-  }
-  
+
+  await ensureSignedIn(gapi);
+
   if (!gapi?.client?.calendar?.events) {
     throw new Error('Google Calendar API not loaded. Ensure gapi client is initialized with calendar scope.');
   }
-  
+
+  // Ensure ISO times include timezone for Google Calendar (Israel = +02:00)
+  const toCalendarTime = (dateTime: string) => {
+    if (/Z$|[+-]\d{2}:?\d{2}$/.test(dateTime)) return dateTime;
+    return `${dateTime.replace(/\.\d{3}$/, '')}+02:00`;
+  };
+
+  const resource = {
+    summary: event.summary,
+    description: event.description,
+    start: { dateTime: toCalendarTime(event.start.dateTime), timeZone: 'Asia/Jerusalem' },
+    end: { dateTime: toCalendarTime(event.end.dateTime), timeZone: 'Asia/Jerusalem' },
+  };
+
   const request = gapi.client.calendar.events.insert({
     calendarId: 'primary',
-    resource: event,
+    resource,
   });
-  
+
   return request;
 }
 

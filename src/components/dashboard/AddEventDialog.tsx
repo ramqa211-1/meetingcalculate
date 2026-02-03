@@ -185,9 +185,10 @@ const AddEventDialog = ({ onEventAdded, editEvent, onEditComplete }: AddEventDia
             toast({ title: 'סנכרון יומן', description: 'הפגישה נוספה ליומן Google' });
           } catch (err) {
             console.error('Google Calendar sync failed:', err);
+            const message = err instanceof Error ? err.message : 'לא ניתן לסנכרן ליומן Google. נסה שוב או בדוק הרשאות ב-Google Cloud Console.';
             toast({
               title: 'סנכרון יומן',
-              description: 'לא ניתן לסנכרן ליומן Google. ודא שהתחברת עם Google והפעלת Calendar API.',
+              description: message,
               variant: 'destructive',
             });
           }
