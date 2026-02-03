@@ -36,7 +36,9 @@ import { addToGoogleCalendar, calculateEndTime } from '@/lib/google-calendar';
 
 const eventSchema = z.object({
   date: z.string().min(1, 'יש לבחור תאריך'),
-  start_time: z.string().min(1, 'יש לבחור שעת התחלה'),
+  start_time: z.string()
+    .min(1, 'יש להזין שעת התחלה')
+    .regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/, 'פורמט שעה לא תקין (דוגמה: 09:00)'),
   duration_hours: z.string().min(1, 'יש להזין משך'),
   client_name: z.string().min(1, 'יש להזין שם לקוח'),
   event_type: z.string().min(1, 'יש לבחור סוג אירוע'),
@@ -251,8 +253,17 @@ const AddEventDialog = ({ onEventAdded, editEvent, onEditComplete }: AddEventDia
                   <FormItem>
                     <FormLabel>שעת התחלה</FormLabel>
                     <FormControl>
-                      <Input type="time" {...field} />
+                      <Input 
+                        type="text" 
+                        placeholder="09:00" 
+                        pattern="[0-2][0-9]:[0-5][0-9]"
+                        maxLength={5}
+                        dir="ltr"
+                        className="text-center"
+                        {...field} 
+                      />
                     </FormControl>
+                    <p className="text-xs text-muted-foreground">פורמט: 09:00 או 14:30</p>
                     <FormMessage />
                   </FormItem>
                 )}
