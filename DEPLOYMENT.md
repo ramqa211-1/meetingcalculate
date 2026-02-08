@@ -4,22 +4,28 @@
 
 ### 1. הגדרת GitHub Secrets
 
-לפני הפריסה, יש להגדיר את משתני הסביבה ב-GitHub Secrets:
+לפני הפריסה, יש להגדיר את משתני הסביבה ב-GitHub Secrets. **בלי מפתחות Firebase האפליקציה תחזיר `auth/invalid-api-key` ב-production.**
 
 1. לך ל-Repository ב-GitHub
 2. פתח **Settings** → **Secrets and variables** → **Actions**
 3. לחץ על **New repository secret**
-4. הוסף את המשתנים הבאים:
+4. הוסף את המשתנים הבאים (חובה ל-Firebase):
 
-   - **Name**: `SUPABASE_URL`
-   - **Value**: כתובת פרויקט Supabase שלך
-     ```
-     https://owarzqykotsvmdbbhxyn.supabase.co
-     ```
+   **Firebase (חובה – לאימות ו-Firestore):**
+   - `VITE_FIREBASE_API_KEY` – מפתח API מ-Firebase Console → Project settings → General
+   - `VITE_FIREBASE_AUTH_DOMAIN` – למשל `mettingcalculate-ai.firebaseapp.com`
+   - `VITE_FIREBASE_PROJECT_ID` – מזהה הפרויקט
+   - `VITE_FIREBASE_STORAGE_BUCKET` – למשל `mettingcalculate-ai.firebasestorage.app`
+   - `VITE_FIREBASE_MESSAGING_SENDER_ID` – מספר Sender ID
+   - `VITE_FIREBASE_APP_ID` – מזהה האפליקציה (מתחיל ב-`1:...`)
 
-   - **Name**: `SUPABASE_PUBLISHABLE_KEY`
-   - **Value**: מפתח anon (public) של Supabase
-     - ניתן למצוא ב-Supabase Dashboard → Settings → API → Project API keys → anon public
+   **התחברות עם Google:**
+   - `VITE_GOOGLE_CLIENT_ID` – Client ID מ-Google Cloud Console (OAuth 2.0)
+
+   **אופציונלי (אם משתמשים):**
+   - `SUPABASE_URL` – כתובת פרויקט Supabase
+   - `SUPABASE_PUBLISHABLE_KEY` – מפתח anon של Supabase
+   - `VITE_OPENAI_API_KEY` – מפתח OpenAI אם יש פיצ'רים של AI בצד הלקוח
 
 ### 2. הגדרת GitHub Pages
 
@@ -57,8 +63,11 @@
 #### פתרון בעיות נפוצות
 
 **Build נכשל?**
-- בדוק ש-`SUPABASE_URL` ו-`SUPABASE_PUBLISHABLE_KEY` הוגדרו נכון ב-Secrets
+- בדוק שכל ה-Secrets של Firebase הוגדרו (ראה למעלה). שגיאת `auth/invalid-api-key` אחרי פריסה = חסרים מפתחות Firebase ב-Secrets.
 - בדוק את הלוגים בשלב **Build** לראות מה השגיאה
+
+**גישה ישירה ל-URL (למשל /dashboard) מחזירה 404?**
+- זה צפוי: GitHub Pages מחזיר 404 ואז הקובץ `404.html` מבצע redirect לדף הראשי עם הנתיב, והאפליקציה נטענת. אם אתה רואה אחרי רגע את דף הלוגין או הדשבורד – זה עובד. אם נשאר 404, וודא ש-`404.html` קיים בתיקיית `public/` ונכלל ב-build.
 
 **פריסה לא עובדת?**
 - ודא שבחרת **GitHub Actions** ב-Pages Settings
