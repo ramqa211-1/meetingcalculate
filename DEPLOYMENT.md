@@ -27,12 +27,14 @@
    - `SUPABASE_PUBLISHABLE_KEY` – מפתח anon של Supabase
    - `VITE_OPENAI_API_KEY` – מפתח OpenAI אם יש פיצ'רים של AI בצד הלקוח
 
-### 2. הגדרת GitHub Pages
+### 2. הגדרת GitHub Pages (חשוב מאוד)
 
 1. לך ל-Repository ב-GitHub
 2. פתח **Settings** → **Pages**
-3. תחת **Source**, בחר **GitHub Actions**
+3. תחת **Source**, **חייבים** לבחור **GitHub Actions** (לא "Deploy from a branch").
 4. שמור את השינויים
+
+**אם ב-Console מופיעה שגיאה 404 על `https://....github.io/src/main.tsx`** – האתר מגיש את קוד המקור במקום ה-build. זה קורה כשהמקור של Pages הוא Branch ולא GitHub Actions. תקן: Settings → Pages → Source = **GitHub Actions**, ואז הרץ שוב את ה-workflow (או עשה push ל-main).
 
 ### 3. הפעלת הפריסה הראשונה
 

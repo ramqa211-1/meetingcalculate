@@ -55,10 +55,25 @@ jobs:
           VITE_OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: npm run build
 
-      # SPA: גישה ישירה ל-/dashboard וכו' מחזירה 404. העתקת index.html ל-404.html
-      # גורמת ל-GitHub Pages להגיש את האפליקציה גם לנתיבים לא קיימים.
+      # וידוא שה-build יצר index עם נתיבי assets (לא קוד מקור /src/main.tsx)
+      - name: Verify build output
+        run: |
+          if grep -q 'src/main.tsx' dist/index.html; then
+            echo "::error::Built index.html still contains /src/main.tsx - build may have wrong base or Pages is not using Actions artifact"
+            exit 1
+          fi
+          if ! grep -q 'assets/' dist/index.html; then
+            echo "::error::Built index.html missing assets/ script path"
+            exit 1
+          fi
+          echo "Build output OK - index has production script path"
+
+      # SPA: גישה ישירה ל-/dashboard וכו' – GitHub Pages מגיש 404.html. העתקה ל-404.html
+      # גורמת לנתיבים האלה לטעון את האפליקציה (React Router יטפל בנתיב).
       - name: Copy index.html to 404.html for SPA routing
-        run: cp ./dist/index.html ./dist/404.html
+        run: |
+          cp dist/index.html dist/404.html
+          test -f dist/404.html && echo "404.html created for SPA fallback"
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
