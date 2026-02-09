@@ -32,6 +32,7 @@ import { collection, doc, addDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
+import { ToastAction } from '@/components/ui/toast';
 import { addToGoogleCalendar, calculateEndTime } from '@/lib/google-calendar';
 
 const eventSchema = z.object({
@@ -166,33 +167,40 @@ const AddEventDialog = ({ onEventAdded, editEvent, onEditComplete }: AddEventDia
           source: 'web',
           notes: data.notes ?? null,
         });
-        toast({
-          title: 'הפגישה נוספה בהצלחה',
-          description: `פגישה עם ${data.client_name} נוספה למערכת`,
-        });
         const formatCurrency = (n: number) =>
           new Intl.NumberFormat('he-IL', { style: 'currency', currency: 'ILS' }).format(n);
-        const shouldSync = window.confirm('האם לסנכרן את הפגישה ליומן Google?');
-        if (shouldSync) {
-          try {
-            const endIso = calculateEndTime(data.date, data.start_time, duration);
-            await addToGoogleCalendar({
-              summary: `פגישה: ${data.client_name}`,
-              description: `${data.event_type} - ${formatCurrency(totalAmount)}`,
-              start: { dateTime: `${data.date}T${data.start_time}:00` },
-              end: { dateTime: endIso },
-            });
-            toast({ title: 'סנכרון יומן', description: 'הפגישה נוספה ליומן Google' });
-          } catch (err) {
-            console.error('Google Calendar sync failed:', err);
-            const message = err instanceof Error ? err.message : 'לא ניתן לסנכרן ליומן Google. נסה שוב או בדוק הרשאות ב-Google Cloud Console.';
-            toast({
-              title: 'סנכרון יומן',
-              description: message,
-              variant: 'destructive',
-            });
-          }
-        }
+        const endIso = calculateEndTime(data.date, data.start_time, duration);
+        const calendarPayload = {
+          summary: `פגישה: ${data.client_name}`,
+          description: `${data.event_type} - ${formatCurrency(totalAmount)}`,
+          start: { dateTime: `${data.date}T${data.start_time}:00` },
+          end: { dateTime: endIso },
+        };
+        toast({
+          title: 'הפגישה נוספה בהצלחה',
+          description: 'לסנכרן ליומן Google לחץ על הכפתור',
+          action: (
+            <ToastAction
+              altText="סנכרן ליומן גוגל"
+              onClick={async () => {
+                try {
+                  await addToGoogleCalendar(calendarPayload);
+                  toast({ title: 'סנכרון יומן', description: 'הפגישה נוספה ליומן Google' });
+                } catch (err) {
+                  console.error('Google Calendar sync failed:', err);
+                  const message = err instanceof Error ? err.message : 'לא ניתן לסנכרן ליומן Google. נסה שוב או בדוק הרשאות ב-Google Cloud Console.';
+                  toast({
+                    title: 'סנכרון יומן',
+                    description: message,
+                    variant: 'destructive',
+                  });
+                }
+              }}
+            >
+              סנכרן ליומן גוגל
+            </ToastAction>
+          ),
+        });
         form.reset();
         setOpen(false);
         onEventAdded();
