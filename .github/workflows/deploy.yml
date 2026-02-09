@@ -55,6 +55,11 @@ jobs:
           VITE_OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: npm run build
 
+      # SPA: גישה ישירה ל-/dashboard וכו' מחזירה 404. העתקת index.html ל-404.html
+      # גורמת ל-GitHub Pages להגיש את האפליקציה גם לנתיבים לא קיימים.
+      - name: Copy index.html to 404.html for SPA routing
+        run: cp ./dist/index.html ./dist/404.html
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
