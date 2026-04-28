@@ -23,7 +23,9 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useEmploymentContext } from '@/hooks/use-employment-context';
-import { Loader2, Briefcase, MessageSquare } from 'lucide-react';
+import { Loader2, Briefcase, MessageSquare, FileText } from 'lucide-react';
+import { getBusinessProfile, saveBusinessProfile } from '@/lib/invoices';
+import type { BusinessProfile } from '@/types/invoice';
 
 const settingsSchema = z.object({
   business_name: z.string().optional(),
@@ -54,6 +56,14 @@ const Settings = () => {
     notifications_enabled: true,
   });
   const [whatsappSaving, setWhatsappSaving] = useState(false);
+  const [businessProfile, setBusinessProfile] = useState<Partial<BusinessProfile>>({
+    business_name: 'רם ולסטל ייעוץ עסקי',
+    osek_id: '300603362',
+    address: '',
+    phone: '',
+    email: '',
+  });
+  const [businessSaving, setBusinessSaving] = useState(false);
   const [employmentForm, setEmploymentForm] = useState({
     is_full_time_employee: false,
     monthly_salary_net: '',
@@ -80,8 +90,35 @@ const Settings = () => {
     if (user) {
       fetchSettings();
       fetchWhatsAppSettings();
+      fetchBusinessProfile();
     }
   }, [user, authLoading, navigate]);
+
+  const fetchBusinessProfile = async () => {
+    if (!user) return;
+    try {
+      const profile = await getBusinessProfile(user.uid);
+      if (profile) {
+        setBusinessProfile(prev => ({ ...prev, ...profile }));
+      }
+    } catch (error) {
+      console.error('Error fetching business profile:', error);
+    }
+  };
+
+  const onSaveBusinessProfile = async () => {
+    if (!user) return;
+    try {
+      setBusinessSaving(true);
+      await saveBusinessProfile(user.uid, businessProfile);
+      toast({ title: 'פרטי עסק נשמרו', description: 'הפרטים יופיעו על החשבוניות שלך' });
+    } catch (error) {
+      console.error('Error saving business profile:', error);
+      toast({ title: 'שגיאה', description: 'לא ניתן לשמור את פרטי העסק', variant: 'destructive' });
+    } finally {
+      setBusinessSaving(false);
+    }
+  };
 
   const fetchWhatsAppSettings = async () => {
     if (!user) return;
@@ -459,6 +496,85 @@ const Settings = () => {
                     שמור
                   </Button>
                 )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  פרטי עסק לחשבוניות
+                </CardTitle>
+                <CardDescription>פרטים אלו יופיעו על כל החשבוניות שתפיק</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="business-name">שם העסק</Label>
+                  <Input
+                    id="business-name"
+                    value={businessProfile.business_name || ''}
+                    onChange={e => setBusinessProfile(p => ({ ...p, business_name: e.target.value }))}
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="osek-id">מספר עוסק פטור (ת.ז.)</Label>
+                  <Input
+                    id="osek-id"
+                    value={businessProfile.osek_id || ''}
+                    onChange={e => setBusinessProfile(p => ({ ...p, osek_id: e.target.value }))}
+                    className="mt-2"
+                    dir="ltr"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">תעודת הזהות שלך — מופיע על המסמכים כ"עוסק פטור"</p>
+                </div>
+                <div>
+                  <Label htmlFor="business-address">כתובת</Label>
+                  <Input
+                    id="business-address"
+                    placeholder="רחוב, עיר"
+                    value={businessProfile.address || ''}
+                    onChange={e => setBusinessProfile(p => ({ ...p, address: e.target.value }))}
+                    className="mt-2"
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="business-phone">טלפון</Label>
+                    <Input
+                      id="business-phone"
+                      type="tel"
+                      placeholder="050-0000000"
+                      value={businessProfile.phone || ''}
+                      onChange={e => setBusinessProfile(p => ({ ...p, phone: e.target.value }))}
+                      className="mt-2"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="business-email">אימייל</Label>
+                    <Input
+                      id="business-email"
+                      type="email"
+                      placeholder="your@email.com"
+                      value={businessProfile.email || ''}
+                      onChange={e => setBusinessProfile(p => ({ ...p, email: e.target.value }))}
+                      className="mt-2"
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-800">
+                  <strong>עוסק פטור</strong> — החשבוניות שלך לא יכללו מע"מ. המסמכים יסומנו "פטור ממע"מ".
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onSaveBusinessProfile}
+                  disabled={businessSaving}
+                >
+                  {businessSaving && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+                  שמור פרטי עסק
+                </Button>
               </CardContent>
             </Card>
 

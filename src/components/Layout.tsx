@@ -1,6 +1,6 @@
 import { ReactNode, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Calendar, BarChart3, Settings, LogOut, Shield, Bot, Menu } from 'lucide-react';
+import { Calendar, BarChart3, Settings, LogOut, Shield, Bot, Menu, Users, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { signOut } from '@/hooks/use-auth';
@@ -30,6 +30,8 @@ const Layout = ({ children }: LayoutProps) => {
 
   const navItems = [
     { path: '/dashboard', label: 'פגישות', icon: Calendar },
+    { path: '/clients', label: 'לקוחות', icon: Users },
+    { path: '/invoices', label: 'חשבוניות', icon: FileText },
     { path: '/reports', label: 'דוחות', icon: BarChart3 },
     { path: '/ai-chat', label: 'צ\'אט AI', icon: Bot },
     { path: '/settings', label: 'הגדרות', icon: Settings },

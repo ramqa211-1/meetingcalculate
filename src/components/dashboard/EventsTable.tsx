@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Pencil, Trash2, MoreHorizontal } from 'lucide-react';
+import { Pencil, Trash2, MoreHorizontal, Loader2, FileText } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,11 +39,14 @@ interface EventsTableProps {
   events: Event[];
   onEdit: (event: Event) => void;
   onDelete: (id: string) => void;
+  onTogglePayment: (id: string, currentStatus: string) => Promise<void>;
+  onCreateInvoice: (event: Event) => void;
 }
 
-const EventsTable = ({ events, onEdit, onDelete }: EventsTableProps) => {
+const EventsTable = ({ events, onEdit, onDelete, onTogglePayment, onCreateInvoice }: EventsTableProps) => {
   const [sortField, setSortField] = useState<keyof Event>('date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set());
 
   const sortedEvents = [...events].sort((a, b) => {
     const aValue = a[sortField];
@@ -68,6 +71,15 @@ const EventsTable = ({ events, onEdit, onDelete }: EventsTableProps) => {
       style: 'currency',
       currency: 'ILS',
     }).format(amount);
+  };
+
+  const handleToggle = async (id: string, currentStatus: string) => {
+    setTogglingIds(prev => new Set(prev).add(id));
+    try {
+      await onTogglePayment(id, currentStatus);
+    } finally {
+      setTogglingIds(prev => { const s = new Set(prev); s.delete(id); return s; });
+    }
   };
 
   const calculateEndTime = (startTime: string, duration: number) => {
@@ -135,9 +147,23 @@ const EventsTable = ({ events, onEdit, onDelete }: EventsTableProps) => {
                 </TableCell>
                 <TableCell className="font-bold">{formatCurrency(event.total_amount)}</TableCell>
                 <TableCell className="hidden md:table-cell">
-                  <Badge variant={event.payment_status === 'paid' ? 'default' : 'secondary'}>
-                    {event.payment_status === 'paid' ? 'שולם' : 'לא שולם'}
-                  </Badge>
+                  <button
+                    onClick={() => handleToggle(event.id, event.payment_status)}
+                    disabled={togglingIds.has(event.id)}
+                    title="לחץ לשינוי סטטוס תשלום"
+                    className="focus:outline-none"
+                  >
+                    {togglingIds.has(event.id) ? (
+                      <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                    ) : (
+                      <Badge
+                        variant={event.payment_status === 'paid' ? 'default' : 'secondary'}
+                        className="cursor-pointer hover:opacity-75 transition-opacity"
+                      >
+                        {event.payment_status === 'paid' ? 'שולם' : 'לא שולם'}
+                      </Badge>
+                    )}
+                  </button>
                 </TableCell>
                 <TableCell className="hidden lg:table-cell">
                   <Badge variant={event.source === 'whatsapp' ? 'outline' : 'secondary'}>
@@ -152,11 +178,15 @@ const EventsTable = ({ events, onEdit, onDelete }: EventsTableProps) => {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => onCreateInvoice(event)}>
+                        <FileText className="w-4 h-4 ml-2" />
+                        הפק חשבונית
+                      </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => onEdit(event)}>
                         <Pencil className="w-4 h-4 ml-2" />
                         ערוך
                       </DropdownMenuItem>
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         onClick={() => onDelete(event.id)}
                         className="text-destructive"
                       >

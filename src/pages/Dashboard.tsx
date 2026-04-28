@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, query, orderBy, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
 import Layout from '@/components/Layout';
@@ -9,6 +9,10 @@ import EventsTable from '@/components/dashboard/EventsTable';
 import AddEventDialog from '@/components/dashboard/AddEventDialog';
 import { DollarSign, Calendar, Clock, TrendingUp, Shield, Download } from 'lucide-react';
 import { exportToJSON, exportToCSV } from '@/lib/export';
+import CreateInvoiceDialog from '@/components/invoices/CreateInvoiceDialog';
+import type { PrefillEvent } from '@/components/invoices/CreateInvoiceDialog';
+import type { Invoice, BusinessProfile } from '@/types/invoice';
+import InvoicePreview from '@/components/invoices/InvoicePreview';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,6 +44,9 @@ const Dashboard = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [invoicePrefill, setInvoicePrefill] = useState<PrefillEvent | null>(null);
+  const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
+  const [createdInvoice, setCreatedInvoice] = useState<{ invoice: Invoice; profile: BusinessProfile } | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, isAdmin, loading: authLoading } = useAuth();
@@ -90,6 +97,42 @@ const Dashboard = () => {
   const handleEditComplete = () => {
     setEditingEvent(null);
     fetchEvents();
+  };
+
+  const handleCreateInvoiceFromEvent = (event: Event) => {
+    setInvoicePrefill({
+      id: event.id,
+      client_name: event.client_name,
+      event_type: event.event_type,
+      date: event.date,
+      total_amount: event.total_amount,
+    });
+    setInvoiceDialogOpen(true);
+  };
+
+  const handleInvoiceCreated = (invoice: Invoice, profile: BusinessProfile) => {
+    setCreatedInvoice({ invoice, profile });
+    setInvoiceDialogOpen(false);
+    setInvoicePrefill(null);
+  };
+
+  const handleTogglePayment = async (id: string, currentStatus: string) => {
+    if (!user) return;
+    const newStatus = currentStatus === 'paid' ? 'unpaid' : 'paid';
+    // Optimistic update
+    setEvents(prev => prev.map(e => e.id === id ? { ...e, payment_status: newStatus } : e));
+    try {
+      await updateDoc(doc(db, 'users', user.uid, 'events', id), { payment_status: newStatus });
+      toast({
+        title: newStatus === 'paid' ? 'סומן כשולם' : 'סומן כלא שולם',
+        description: `סטטוס התשלום עודכן בהצלחה`,
+      });
+    } catch (error) {
+      // Rollback on failure
+      setEvents(prev => prev.map(e => e.id === id ? { ...e, payment_status: currentStatus } : e));
+      console.error('Error toggling payment:', error);
+      toast({ title: 'שגיאה', description: 'לא ניתן לעדכן את סטטוס התשלום', variant: 'destructive' });
+    }
   };
 
   const handleDeleteEvent = async (id: string) => {
@@ -147,6 +190,7 @@ const Dashboard = () => {
   }
 
   return (
+  <>
     <Layout>
       <div
         className="space-y-6 md:space-y-8 p-4 md:p-8 rounded-lg min-h-[calc(100vh-200px)] bg-cover bg-center bg-no-repeat"
@@ -235,11 +279,32 @@ const Dashboard = () => {
               events={events}
               onEdit={handleEditEvent}
               onDelete={handleDeleteEvent}
+              onTogglePayment={handleTogglePayment}
+              onCreateInvoice={handleCreateInvoiceFromEvent}
             />
           </div>
         </div>
       </div>
     </Layout>
+
+    {/* Invoice creation from event row (controlled) */}
+    <CreateInvoiceDialog
+      onCreated={handleInvoiceCreated}
+      open={invoiceDialogOpen}
+      onOpenChange={open => { setInvoiceDialogOpen(open); if (!open) setInvoicePrefill(null); }}
+      prefillEvent={invoicePrefill ?? undefined}
+    />
+
+    {/* Auto-open preview after invoice is created */}
+    {createdInvoice && (
+      <InvoicePreview
+        open={!!createdInvoice}
+        onOpenChange={o => !o && setCreatedInvoice(null)}
+        invoice={createdInvoice.invoice}
+        businessProfile={createdInvoice.profile}
+      />
+    )}
+  </>
   );
 };
 
