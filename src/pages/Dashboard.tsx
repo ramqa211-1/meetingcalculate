@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, orderBy, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -7,7 +7,9 @@ import Layout from '@/components/Layout';
 import KPICard from '@/components/dashboard/KPICard';
 import EventsTable from '@/components/dashboard/EventsTable';
 import AddEventDialog from '@/components/dashboard/AddEventDialog';
-import { DollarSign, Calendar, Clock, TrendingUp, Shield, Download } from 'lucide-react';
+import { DollarSign, Calendar, Clock, TrendingUp, Shield, Download, ChevronRight, ChevronLeft } from 'lucide-react';
+import { format } from 'date-fns';
+import { he } from 'date-fns/locale';
 import { exportToJSON, exportToCSV } from '@/lib/export';
 import CreateInvoiceDialog from '@/components/invoices/CreateInvoiceDialog';
 import type { PrefillEvent } from '@/components/invoices/CreateInvoiceDialog';
@@ -40,6 +42,9 @@ interface Event {
   tags?: string[];
 }
 
+const startOfMonth = (d: Date) => new Date(d.getFullYear(), d.getMonth(), 1);
+const addMonths = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth() + n, 1);
+
 const Dashboard = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,6 +52,7 @@ const Dashboard = () => {
   const [invoicePrefill, setInvoicePrefill] = useState<PrefillEvent | null>(null);
   const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
   const [createdInvoice, setCreatedInvoice] = useState<{ invoice: Invoice; profile: BusinessProfile } | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState<Date>(() => startOfMonth(new Date()));
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, isAdmin, loading: authLoading } = useAuth();
@@ -154,23 +160,38 @@ const Dashboard = () => {
     }
   };
 
-  const calculateKPIs = () => {
-    const totalRevenue = events.reduce((sum, event) => sum + event.total_amount, 0);
-    const paidRevenue = events
+  const filteredEvents = useMemo(() => {
+    const start = selectedMonth;
+    const end = addMonths(selectedMonth, 1);
+    return events.filter((e) => {
+      const d = new Date(e.date);
+      return d >= start && d < end;
+    });
+  }, [events, selectedMonth]);
+
+  const calculateKPIs = (list: Event[]) => {
+    const totalRevenue = list.reduce((sum, event) => sum + event.total_amount, 0);
+    const paidRevenue = list
       .filter((e) => e.payment_status === 'paid')
       .reduce((sum, event) => sum + event.total_amount, 0);
     const unpaidRevenue = totalRevenue - paidRevenue;
-    const totalHours = events.reduce((sum, event) => sum + event.duration_hours, 0);
+    const totalHours = list.reduce((sum, event) => sum + event.duration_hours, 0);
     return {
       totalRevenue,
       paidRevenue,
       unpaidRevenue,
-      totalEvents: events.length,
+      totalEvents: list.length,
       totalHours,
     };
   };
 
-  const kpis = calculateKPIs();
+  const kpis = calculateKPIs(filteredEvents);
+
+  const minMonth = useMemo(() => addMonths(startOfMonth(new Date()), -11), []);
+  const canGoPrev = selectedMonth > minMonth;
+  const goPrevMonth = () => setSelectedMonth((m) => addMonths(m, -1));
+  const goNextMonth = () => setSelectedMonth((m) => addMonths(m, 1));
+  const monthLabel = format(selectedMonth, 'LLLL yyyy', { locale: he });
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('he-IL', {
@@ -225,11 +246,17 @@ const Dashboard = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => exportToJSON(events, 'events')}>
-                  JSON
+                <DropdownMenuItem onClick={() => exportToJSON(filteredEvents, `events-${format(selectedMonth, 'yyyy-MM')}`)}>
+                  JSON ({monthLabel})
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => exportToCSV(events as Record<string, unknown>[], 'events')}>
-                  CSV
+                <DropdownMenuItem onClick={() => exportToCSV(filteredEvents as Record<string, unknown>[], `events-${format(selectedMonth, 'yyyy-MM')}`)}>
+                  CSV ({monthLabel})
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportToJSON(events, 'events-all')}>
+                  JSON (כל ההיסטוריה)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportToCSV(events as Record<string, unknown>[], 'events-all')}>
+                  CSV (כל ההיסטוריה)
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -241,11 +268,29 @@ const Dashboard = () => {
           </div>
         </div>
 
+        <div className="flex items-center justify-center gap-2 sm:gap-4 py-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={goPrevMonth}
+            disabled={!canGoPrev}
+            title={canGoPrev ? 'חודש קודם' : 'הארכיון מוגבל ל-12 חודשים'}
+          >
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+          <span className="text-base sm:text-lg font-semibold capitalize min-w-[140px] text-center">
+            {monthLabel}
+          </span>
+          <Button variant="outline" size="sm" onClick={goNextMonth} title="חודש הבא">
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <KPICard
             title="הכנסה כוללת"
             value={formatCurrency(kpis.totalRevenue)}
-            subtitle="מכל הפגישות"
+            subtitle={`${monthLabel} — מכל הפגישות`}
             icon={<DollarSign className="w-5 h-5" />}
             colorClass="bg-primary/10 text-primary"
           />
@@ -273,10 +318,12 @@ const Dashboard = () => {
         </div>
 
         <div className="space-y-4">
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground">פגישות אחרונות</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-foreground">
+            פגישות — {monthLabel}
+          </h2>
           <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
             <EventsTable
-              events={events}
+              events={filteredEvents}
               onEdit={handleEditEvent}
               onDelete={handleDeleteEvent}
               onTogglePayment={handleTogglePayment}
