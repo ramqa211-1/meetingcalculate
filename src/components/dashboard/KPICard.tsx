@@ -1,5 +1,4 @@
 import { ReactNode } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 interface KPICardProps {
@@ -14,30 +13,63 @@ interface KPICardProps {
   colorClass?: string;
 }
 
-const KPICard = ({ title, value, subtitle, icon, trend, colorClass = 'bg-primary/10 text-primary' }: KPICardProps) => {
+const KPICard = ({
+  title,
+  value,
+  subtitle,
+  icon,
+  trend,
+  colorClass = 'text-primary',
+}: KPICardProps) => {
   return (
-    <Card className="bg-white/65 backdrop-blur-sm border-white/40">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <div className={cn('p-2 rounded-lg', colorClass)}>
+    <div className="group relative bg-card border border-border rounded-sm overflow-hidden transition-colors hover:border-foreground/30">
+      {/* top-left eyebrow + icon top-right */}
+      <div className="flex items-start justify-between p-5 pb-3">
+        <div className="eyebrow leading-tight max-w-[70%]">{title}</div>
+        <div
+          className={cn(
+            'shrink-0 w-7 h-7 flex items-center justify-center rounded-full bg-foreground/[0.04] [&>svg]:w-3.5 [&>svg]:h-3.5',
+            colorClass
+          )}
+        >
           {icon}
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        {subtitle && (
-          <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
+      </div>
+
+      {/* hero number — mono, tabular, hefty */}
+      <div className="px-5">
+        <div className="font-mono text-[2rem] sm:text-[2.25rem] leading-none font-medium tabular-nums tracking-tight text-foreground">
+          {value}
+        </div>
+      </div>
+
+      {/* hairline + meta */}
+      <div className="mt-4 mx-5 h-px bg-border" />
+      <div className="flex items-center justify-between px-5 pt-2.5 pb-4">
+        {subtitle ? (
+          <p className="text-[11px] text-muted-foreground leading-tight">{subtitle}</p>
+        ) : (
+          <span />
         )}
         {trend && (
-          <p className={cn(
-            'text-xs mt-1',
-            trend.isPositive ? 'text-success' : 'text-destructive'
-          )}>
+          <span
+            className={cn(
+              'text-[11px] font-mono tabular-nums font-medium',
+              trend.isPositive ? 'text-accent' : 'text-destructive'
+            )}
+          >
             {trend.isPositive ? '↑' : '↓'} {trend.value}
-          </p>
+          </span>
         )}
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* subtle accent strip on hover */}
+      <div
+        className={cn(
+          'absolute inset-x-0 top-0 h-[2px] bg-foreground origin-right scale-x-0 transition-transform duration-300 group-hover:scale-x-100'
+        )}
+      />
+    </div>
   );
 };
 

@@ -40,17 +40,22 @@ const Layout = ({ children }: LayoutProps) => {
   ];
 
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
-      {/* Top Navigation */}
-      <nav className="bg-card border-b border-border sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
+    <div className="min-h-screen" dir="rtl">
+      {/* Editorial masthead nav */}
+      <nav className="bg-card/95 backdrop-blur-sm border-b border-border sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-3 md:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4 md:gap-8">
-              <Link to="/dashboard" className="flex items-center gap-2">
-                <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-                  <Calendar className="w-6 h-6 text-primary-foreground" />
+            <div className="flex items-center gap-4 md:gap-10">
+              <Link to="/dashboard" className="flex items-center gap-3 group">
+                <div className="w-9 h-9 bg-foreground rounded-sm flex items-center justify-center transition-transform group-hover:rotate-3">
+                  <Calendar className="w-4 h-4 text-background" strokeWidth={2.5} />
                 </div>
-                <span className="text-lg md:text-xl font-bold text-foreground">מערכת ניהול</span>
+                <div className="leading-none">
+                  <div className="font-serif text-base md:text-lg text-foreground tracking-tight">מערכת ניהול</div>
+                  <div className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground mt-0.5 hidden md:block">
+                    Business Quarterly
+                  </div>
+                </div>
               </Link>
 
               {/* Mobile menu */}
@@ -98,30 +103,39 @@ const Layout = ({ children }: LayoutProps) => {
                 </SheetContent>
               </Sheet>
 
-              <div className="hidden md:flex items-center gap-2">
+              <div className="hidden md:flex items-center gap-1">
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = location.pathname === item.path;
                   return (
                     <Link key={item.path} to={item.path}>
-                      <Button
-                        variant={isActive ? 'default' : 'ghost'}
-                        className="gap-2"
+                      <button
+                        className={`relative flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors ${
+                          isActive
+                            ? 'text-foreground'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
                       >
-                        <Icon className="w-4 h-4" />
+                        <Icon className="w-3.5 h-3.5" strokeWidth={isActive ? 2.5 : 2} />
                         {item.label}
-                      </Button>
+                        {isActive && (
+                          <span className="absolute bottom-0 left-2 right-2 h-[2px] bg-foreground" />
+                        )}
+                      </button>
                     </Link>
                   );
                 })}
-                <SearchBar />
+                <div className="ms-2"><SearchBar /></div>
               </div>
             </div>
 
-            <Button variant="ghost" onClick={handleLogout} className="hidden md:flex gap-2">
-              <LogOut className="w-4 h-4" />
+            <button
+              onClick={handleLogout}
+              className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
+            >
+              <LogOut className="w-3.5 h-3.5" />
               התנתק
-            </Button>
+            </button>
           </div>
         </div>
       </nav>

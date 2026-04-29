@@ -2,101 +2,107 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/*
+  Editorial Financial Quarterly — design system
+  Cream-and-ink palette inspired by financial press typography.
+  All colors expressed as HSL triplets (no leading hsl()).
 */
 
 @layer base {
   :root {
-    --background: 210 30% 98%;
-    --foreground: 222 47% 11%;
+    /* Surfaces */
+    --background: 42 35% 95%;          /* warm cream parchment */
+    --foreground: 25 18% 12%;          /* warm ink */
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 25 18% 12%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover: 42 28% 97%;
+    --popover-foreground: 25 18% 12%;
 
-    --primary: 243 75% 59%;
-    --primary-foreground: 0 0% 100%;
+    /* Primary — deep oxblood. Distinctive, not generic blue/purple. */
+    --primary: 9 65% 32%;
+    --primary-foreground: 42 35% 96%;
 
-    --secondary: 210 30% 95%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 42 22% 90%;
+    --secondary-foreground: 25 18% 18%;
 
-    --muted: 210 30% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 42 18% 92%;
+    --muted-foreground: 30 10% 40%;
 
-    --accent: 142 76% 36%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent — forest green for paid / positive */
+    --accent: 155 35% 26%;
+    --accent-foreground: 42 35% 96%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 60% 38%;
+    --destructive-foreground: 42 35% 96%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 243 75% 59%;
+    --border: 38 18% 82%;
+    --input: 38 18% 82%;
+    --ring: 9 55% 38%;
 
-    --radius: 0.5rem;
+    --radius: 0.25rem;
 
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 100%;
+    --success: 155 40% 28%;
+    --success-foreground: 42 35% 96%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    --warning: 32 70% 38%;
+    --warning-foreground: 42 35% 96%;
 
-    --info: 199 89% 48%;
-    --info-foreground: 0 0% 100%;
+    --info: 200 35% 30%;
+    --info-foreground: 42 35% 96%;
 
-    --chart-1: 243 75% 59%;
-    --chart-2: 142 76% 36%;
-    --chart-3: 38 92% 50%;
-    --chart-4: 199 89% 48%;
-    --chart-5: 280 61% 50%;
+    /* Charts — warm editorial palette */
+    --chart-1: 9 65% 32%;
+    --chart-2: 155 35% 26%;
+    --chart-3: 32 70% 38%;
+    --chart-4: 200 35% 30%;
+    --chart-5: 25 35% 25%;
   }
 
   .dark {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
+    --background: 25 15% 8%;
+    --foreground: 42 22% 92%;
 
-    --card: 224 71% 4%;
-    --card-foreground: 210 40% 98%;
+    --card: 25 14% 11%;
+    --card-foreground: 42 22% 92%;
 
-    --popover: 224 71% 4%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 25 14% 11%;
+    --popover-foreground: 42 22% 92%;
 
-    --primary: 243 75% 59%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 9 60% 48%;
+    --primary-foreground: 42 22% 96%;
 
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 25 12% 16%;
+    --secondary-foreground: 42 22% 92%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 25 12% 16%;
+    --muted-foreground: 38 12% 65%;
 
-    --accent: 142 76% 36%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 155 30% 38%;
+    --accent-foreground: 42 22% 96%;
 
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 55% 45%;
+    --destructive-foreground: 42 22% 96%;
 
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 243 75% 59%;
+    --border: 25 12% 18%;
+    --input: 25 12% 18%;
+    --ring: 9 55% 50%;
 
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 100%;
+    --success: 155 35% 38%;
+    --success-foreground: 42 22% 96%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    --warning: 32 60% 48%;
+    --warning-foreground: 42 22% 96%;
 
-    --info: 199 89% 48%;
-    --info-foreground: 0 0% 100%;
+    --info: 200 30% 42%;
+    --info-foreground: 42 22% 96%;
 
-    --chart-1: 243 75% 59%;
-    --chart-2: 142 76% 36%;
-    --chart-3: 38 92% 50%;
-    --chart-4: 199 89% 48%;
-    --chart-5: 280 61% 50%;
+    --chart-1: 9 60% 48%;
+    --chart-2: 155 35% 38%;
+    --chart-3: 32 60% 48%;
+    --chart-4: 200 30% 42%;
+    --chart-5: 25 35% 40%;
   }
 }
 
@@ -105,7 +111,54 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
-  body {
-    @apply bg-background text-foreground;
+  html {
+    /* Subtle paper grain — barely visible noise that adds tactility */
+    background-color: hsl(var(--background));
+    background-image:
+      radial-gradient(circle at 20% 0%, hsl(38 30% 90% / 0.5) 0%, transparent 50%),
+      radial-gradient(circle at 80% 100%, hsl(28 25% 88% / 0.4) 0%, transparent 50%);
+    background-attachment: fixed;
   }
+
+  body {
+    @apply bg-transparent text-foreground font-sans antialiased;
+    font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Editorial heading defaults — serif Hebrew + Latin */
+  h1, h2, h3 {
+    @apply font-serif text-foreground;
+    font-feature-settings: "kern" 1, "liga" 1, "dlig" 1;
+    letter-spacing: -0.01em;
+  }
+
+  /* Tabular numbers everywhere by default for currency / counters */
+  .tabular,
+  [class*="tabular-nums"] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Small caps eyebrow utility */
+  .eyebrow {
+    @apply text-[10px] uppercase tracking-[0.22em] text-muted-foreground font-medium;
+  }
+  .eyebrow-lg {
+    @apply text-[11px] uppercase tracking-[0.3em] text-muted-foreground font-medium;
+  }
+
+  /* Hairline horizontal rule */
+  .rule-thin {
+    @apply h-px w-full bg-border;
+  }
+  .rule-thick {
+    @apply h-[2px] w-full bg-foreground;
+  }
+}
+
+/* Mono for numbers — apply selectively */
+.num,
+.font-mono {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
 }

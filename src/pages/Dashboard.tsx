@@ -24,8 +24,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useToast } from '@/hooks/use-toast';
-import { useIsMobile } from '@/hooks/use-mobile';
-import backgroundImage from '@/assets/background.png';
 
 type RangeMode = 'month' | 'quarter' | 'half' | 'year';
 
@@ -60,7 +58,6 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, isAdmin, loading: authLoading } = useAuth();
-  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -233,30 +230,34 @@ const Dashboard = () => {
   return (
   <>
     <Layout>
-      <div
-        className="space-y-6 md:space-y-8 p-4 md:p-8 rounded-lg min-h-[calc(100vh-200px)] bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: isMobile ? undefined : `url(${backgroundImage})`,
-          backgroundColor: isMobile ? 'hsl(var(--muted) / 0.5)' : undefined,
-        }}
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl sm:text-3xl font-bold text-foreground">לוח הבקרה</h1>
-              {isAdmin && (
-                <div className="flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-md text-sm">
-                  <Shield className="w-4 h-4" />
-                  <span>אדמין</span>
-                </div>
-              )}
+      <div className="space-y-8 md:space-y-12 py-2">
+        {/* Editorial masthead */}
+        <header className="border-b border-foreground/15 pb-6 md:pb-8">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+            <div>
+              <div className="eyebrow-lg mb-3 flex items-center gap-3">
+                <span>דו״ח רבעוני</span>
+                <span className="h-px w-8 bg-foreground/40" />
+                <span className="font-mono tabular-nums">{format(new Date(), 'yyyy', { locale: he })}</span>
+                {isAdmin && (
+                  <>
+                    <span className="h-px w-8 bg-foreground/40" />
+                    <span className="inline-flex items-center gap-1 text-primary normal-case tracking-normal text-[11px]">
+                      <Shield className="w-3 h-3" />
+                      Admin
+                    </span>
+                  </>
+                )}
+              </div>
+              <h1 className="font-serif text-4xl md:text-6xl leading-[1.05] text-foreground">
+                לוח הבקרה
+              </h1>
+              <p className="mt-3 text-sm md:text-base text-muted-foreground max-w-md leading-relaxed">
+                {isAdmin
+                  ? 'סקירה מלאה של כל הפגישות וההכנסות במערכת'
+                  : 'סקירה מלאה של הפגישות וההכנסות שלך'}
+              </p>
             </div>
-            <p className="text-muted-foreground mt-1">
-              {isAdmin
-                ? 'סקירה מלאה של כל הפגישות וההכנסות במערכת'
-                : 'סקירה מלאה של הפגישות וההכנסות שלך'}
-            </p>
-          </div>
           <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -286,41 +287,51 @@ const Dashboard = () => {
               onEventAdded={fetchEvents}
             />
           </div>
-        </div>
+          </div>
+        </header>
 
-        <div className="flex flex-col items-center gap-3 py-2">
+        {/* Range selector — editorial pill row */}
+        <div className="flex flex-col items-center gap-4">
+          <div className="eyebrow">תקופת צפייה</div>
           <ToggleGroup
             type="single"
             value={rangeMode}
             onValueChange={(v) => v && setRangeMode(v as RangeMode)}
-            className="bg-white/65 backdrop-blur-sm border rounded-md"
+            className="bg-card border border-border rounded-sm divide-x divide-border/70 [&>*]:rounded-none [&>*:first-child]:rounded-r-sm [&>*:last-child]:rounded-l-sm"
           >
-            <ToggleGroupItem value="month" className="px-3 sm:px-4">חודש</ToggleGroupItem>
-            <ToggleGroupItem value="quarter" className="px-3 sm:px-4">3 חודשים</ToggleGroupItem>
-            <ToggleGroupItem value="half" className="px-3 sm:px-4">חצי שנה</ToggleGroupItem>
-            <ToggleGroupItem value="year" className="px-3 sm:px-4">שנה</ToggleGroupItem>
+            <ToggleGroupItem value="month" className="px-3 sm:px-5 text-xs sm:text-sm font-medium data-[state=on]:bg-foreground data-[state=on]:text-background">חודש</ToggleGroupItem>
+            <ToggleGroupItem value="quarter" className="px-3 sm:px-5 text-xs sm:text-sm font-medium data-[state=on]:bg-foreground data-[state=on]:text-background">3 חודשים</ToggleGroupItem>
+            <ToggleGroupItem value="half" className="px-3 sm:px-5 text-xs sm:text-sm font-medium data-[state=on]:bg-foreground data-[state=on]:text-background">חצי שנה</ToggleGroupItem>
+            <ToggleGroupItem value="year" className="px-3 sm:px-5 text-xs sm:text-sm font-medium data-[state=on]:bg-foreground data-[state=on]:text-background">שנה</ToggleGroupItem>
           </ToggleGroup>
 
           {rangeMode === 'month' ? (
-            <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-3 sm:gap-5">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={goPrevMonth}
                 disabled={!canGoPrev}
+                className="h-8 w-8 p-0 hover:bg-foreground/5"
                 title={canGoPrev ? 'חודש קודם' : 'הארכיון מוגבל ל-12 חודשים'}
               >
                 <ChevronRight className="w-4 h-4" />
               </Button>
-              <span className="text-base sm:text-lg font-semibold capitalize min-w-[140px] text-center">
+              <span className="font-serif text-2xl sm:text-3xl capitalize min-w-[180px] text-center text-foreground">
                 {monthLabel}
               </span>
-              <Button variant="outline" size="sm" onClick={goNextMonth} title="חודש הבא">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={goNextMonth}
+                className="h-8 w-8 p-0 hover:bg-foreground/5"
+                title="חודש הבא"
+              >
                 <ChevronLeft className="w-4 h-4" />
               </Button>
             </div>
           ) : (
-            <div className="text-base sm:text-lg font-semibold">{rangeLabel}</div>
+            <div className="font-serif text-2xl sm:text-3xl text-foreground">{rangeLabel}</div>
           )}
         </div>
 
@@ -329,36 +340,44 @@ const Dashboard = () => {
             title="הכנסה כוללת"
             value={formatCurrency(kpis.totalRevenue)}
             subtitle={`${rangeLabel} — מכל הפגישות`}
-            icon={<DollarSign className="w-5 h-5" />}
-            colorClass="bg-primary/10 text-primary"
+            icon={<DollarSign />}
+            colorClass="text-primary"
           />
           <KPICard
             title="כבר שולם"
             value={formatCurrency(kpis.paidRevenue)}
             subtitle="הכנסה שהתקבלה"
-            icon={<TrendingUp className="w-5 h-5" />}
-            colorClass="bg-accent/10 text-accent"
+            icon={<TrendingUp />}
+            colorClass="text-accent"
           />
           <KPICard
             title="ממתין לתשלום"
             value={formatCurrency(kpis.unpaidRevenue)}
             subtitle="הכנסה צפויה"
-            icon={<Clock className="w-5 h-5" />}
-            colorClass="bg-warning/10 text-warning"
+            icon={<Clock />}
+            colorClass="text-warning"
           />
           <KPICard
             title="פגישות"
             value={kpis.totalEvents}
             subtitle={`${kpis.totalHours} שעות סה"כ`}
-            icon={<Calendar className="w-5 h-5" />}
-            colorClass="bg-info/10 text-info"
+            icon={<Calendar />}
+            colorClass="text-info"
           />
         </div>
 
-        <div className="space-y-4">
-          <h2 className="text-xl sm:text-2xl font-bold text-foreground">
-            פגישות — {rangeLabel}
-          </h2>
+        <section className="space-y-5">
+          <div className="flex items-end justify-between border-b border-foreground/15 pb-3">
+            <div>
+              <div className="eyebrow mb-1">לוח פעילות</div>
+              <h2 className="font-serif text-2xl sm:text-3xl text-foreground leading-tight">
+                פגישות · {rangeLabel}
+              </h2>
+            </div>
+            <div className="font-mono text-xs text-muted-foreground tabular-nums">
+              {filteredEvents.length} רשומות
+            </div>
+          </div>
           <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
             <EventsTable
               events={filteredEvents}
@@ -368,7 +387,7 @@ const Dashboard = () => {
               onCreateInvoice={handleCreateInvoiceFromEvent}
             />
           </div>
-        </div>
+        </section>
       </div>
     </Layout>
 

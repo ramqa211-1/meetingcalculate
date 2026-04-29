@@ -42,15 +42,16 @@ type RangeMode = 'quarter' | 'half' | 'year';
 const startOfMonth = (d: Date) => new Date(d.getFullYear(), d.getMonth(), 1);
 const addMonths = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth() + n, 1);
 
+// Editorial financial palette — earthy, warm, distinctive
 const COLORS = [
-  'hsl(243 75% 59%)',
-  'hsl(160 84% 39%)',
-  'hsl(38 92% 50%)',
-  'hsl(199 89% 48%)',
-  'hsl(0 84% 60%)',
-  'hsl(280 75% 60%)',
-  'hsl(170 60% 50%)',
-  'hsl(20 90% 60%)',
+  'hsl(9 65% 32%)',   // oxblood
+  'hsl(155 35% 26%)', // forest
+  'hsl(32 70% 38%)',  // mustard
+  'hsl(200 35% 30%)', // deep teal
+  'hsl(25 35% 25%)',  // cocoa
+  'hsl(280 25% 35%)', // deep plum
+  'hsl(355 45% 40%)', // crimson
+  'hsl(45 45% 50%)',  // antique gold
 ];
 
 const formatCurrency = (n: number) =>
@@ -195,26 +196,34 @@ const Statistics = () => {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
-              <BarChart3 className="w-7 h-7" />
-              סטטיסטיקות וגרפים
-            </h1>
-            <p className="text-muted-foreground mt-1">תובנות ומגמות מהנתונים שלך — {rangeLabel}</p>
+      <div className="space-y-8 md:space-y-10">
+        <header className="border-b border-foreground/15 pb-6 md:pb-8">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+            <div>
+              <div className="eyebrow-lg mb-3 flex items-center gap-3">
+                <span>תובנות ומגמות</span>
+                <span className="h-px w-8 bg-foreground/40" />
+                <span className="font-mono tabular-nums">Analytics</span>
+              </div>
+              <h1 className="font-serif text-4xl md:text-6xl leading-[1.05] text-foreground">
+                סטטיסטיקות וגרפים
+              </h1>
+              <p className="mt-3 text-sm md:text-base text-muted-foreground max-w-md leading-relaxed">
+                תובנות ומגמות מהנתונים שלך — {rangeLabel}
+              </p>
+            </div>
+            <ToggleGroup
+              type="single"
+              value={rangeMode}
+              onValueChange={(v) => v && setRangeMode(v as RangeMode)}
+              className="bg-card border border-border rounded-sm divide-x divide-border/70 [&>*]:rounded-none [&>*:first-child]:rounded-r-sm [&>*:last-child]:rounded-l-sm"
+            >
+              <ToggleGroupItem value="quarter" className="px-3 sm:px-5 text-xs sm:text-sm font-medium data-[state=on]:bg-foreground data-[state=on]:text-background">3 חודשים</ToggleGroupItem>
+              <ToggleGroupItem value="half" className="px-3 sm:px-5 text-xs sm:text-sm font-medium data-[state=on]:bg-foreground data-[state=on]:text-background">חצי שנה</ToggleGroupItem>
+              <ToggleGroupItem value="year" className="px-3 sm:px-5 text-xs sm:text-sm font-medium data-[state=on]:bg-foreground data-[state=on]:text-background">שנה</ToggleGroupItem>
+            </ToggleGroup>
           </div>
-          <ToggleGroup
-            type="single"
-            value={rangeMode}
-            onValueChange={(v) => v && setRangeMode(v as RangeMode)}
-            className="border rounded-md"
-          >
-            <ToggleGroupItem value="quarter" className="px-3 sm:px-4">3 חודשים</ToggleGroupItem>
-            <ToggleGroupItem value="half" className="px-3 sm:px-4">חצי שנה</ToggleGroupItem>
-            <ToggleGroupItem value="year" className="px-3 sm:px-4">שנה</ToggleGroupItem>
-          </ToggleGroup>
-        </div>
+        </header>
 
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -222,29 +231,29 @@ const Statistics = () => {
             title="הכנסה כוללת"
             value={formatCurrency(totalRevenue)}
             subtitle={rangeLabel}
-            icon={<DollarSign className="w-5 h-5" />}
-            colorClass="bg-primary/10 text-primary"
+            icon={<DollarSign />}
+            colorClass="text-primary"
           />
           <KPICard
             title="ממוצע לפגישה"
             value={formatCurrency(avgPerEvent)}
             subtitle={`${totalEvents} פגישות`}
-            icon={<TrendingUp className="w-5 h-5" />}
-            colorClass="bg-accent/10 text-accent"
+            icon={<TrendingUp />}
+            colorClass="text-accent"
           />
           <KPICard
             title="פגישות"
             value={totalEvents}
             subtitle={`${totalHours.toFixed(1)} שעות סה"כ`}
-            icon={<Calendar className="w-5 h-5" />}
-            colorClass="bg-info/10 text-info"
+            icon={<Calendar />}
+            colorClass="text-info"
           />
           <KPICard
             title="ממוצע לחודש"
             value={formatCurrency(totalRevenue / monthsBack)}
             subtitle={`לאורך ${monthsBack} חודשים`}
-            icon={<Clock className="w-5 h-5" />}
-            colorClass="bg-warning/10 text-warning"
+            icon={<Clock />}
+            colorClass="text-warning"
           />
         </div>
 

@@ -91,7 +91,7 @@ const EventsTable = ({ events, onEdit, onDelete, onTogglePayment, onCreateInvoic
   };
 
   return (
-    <div className="rounded-lg border border-white/40 bg-white/65 backdrop-blur-sm overflow-x-auto">
+    <div className="rounded-sm border border-border bg-card overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>
