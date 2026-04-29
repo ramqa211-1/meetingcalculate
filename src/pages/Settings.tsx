@@ -100,6 +100,18 @@ const Settings = () => {
       const profile = await getBusinessProfile(user.uid);
       if (profile) {
         setBusinessProfile(prev => ({ ...prev, ...profile }));
+      } else {
+        // No profile exists yet — persist the defaults so invoice creation
+        // works without the user needing to find and click "save profile"
+        const defaults = {
+          business_name: 'רם ולסטל ייעוץ עסקי',
+          osek_id: '300603362',
+          address: '',
+          phone: '',
+          email: '',
+        };
+        await saveBusinessProfile(user.uid, defaults);
+        console.log('[Settings] auto-persisted default business profile');
       }
     } catch (error) {
       console.error('Error fetching business profile:', error);

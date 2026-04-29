@@ -16,7 +16,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, Trash2, Loader2, FileText, Import } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
-import { getClients, createInvoice, getBusinessProfile } from '@/lib/invoices';
+import { getClients, createInvoice, getBusinessProfile, saveBusinessProfile } from '@/lib/invoices';
 import { collection, query, getDocs, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Client, InvoiceItem, DocumentType, Invoice, BusinessProfile } from '@/types/invoice';
@@ -197,18 +197,22 @@ const CreateInvoiceDialog = ({
 
     setSaving(true);
     try {
-      const profile = await getBusinessProfile(user.uid);
+      let profile = await getBusinessProfile(user.uid);
       console.log('[CreateInvoice] business profile fetched:', profile);
       if (!profile?.osek_id) {
-        const desc = profile === null
-          ? 'לא נמצא פרופיל עסק. עבור להגדרות → "פרטי עסק לחשבוניות" → לחץ "שמור פרטי עסק"'
-          : `נמצא פרופיל אך חסר ת.ז. (osek_id). פרטים שנמצאו: ${JSON.stringify(profile)}`;
-        toast({
-          title: 'חסרים פרטי עסק',
-          description: desc,
-          variant: 'destructive',
-        });
-        return;
+        // Self-heal: persist defaults rather than blocking invoice creation
+        const defaults: BusinessProfile = {
+          business_name: profile?.business_name || 'רם ולסטל ייעוץ עסקי',
+          osek_id: '300603362',
+          address: profile?.address || '',
+          phone: profile?.phone || '',
+          email: profile?.email || '',
+          last_invoice_number: profile?.last_invoice_number ?? 0,
+        };
+        await saveBusinessProfile(user.uid, defaults);
+        profile = defaults;
+        console.log('[CreateInvoice] auto-created business profile:', profile);
+        toast({ title: 'נוצר פרופיל עסק', description: 'ניתן לעדכן בהגדרות' });
       }
 
       const invoice = await createInvoice(user.uid, {
