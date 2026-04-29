@@ -101,8 +101,20 @@ export async function createInvoice(
     created_at: new Date().toISOString(),
   };
 
-  const ref = await addDoc(collection(db, 'users', userId, 'invoices'), invoiceData);
-  return { id: ref.id, ...invoiceData };
+  // Firestore rejects `undefined` field values. Strip them before write.
+  const cleaned = Object.fromEntries(
+    Object.entries(invoiceData).filter(([, v]) => v !== undefined)
+  ) as typeof invoiceData;
+
+  // Also clean nested client_snapshot (tax_id/address/email/phone are optional)
+  if (cleaned.client_snapshot) {
+    cleaned.client_snapshot = Object.fromEntries(
+      Object.entries(cleaned.client_snapshot).filter(([, v]) => v !== undefined)
+    ) as Invoice['client_snapshot'];
+  }
+
+  const ref = await addDoc(collection(db, 'users', userId, 'invoices'), cleaned);
+  return { id: ref.id, ...cleaned };
 }
 
 export async function cancelInvoice(userId: string, invoiceId: string): Promise<void> {
