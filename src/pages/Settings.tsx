@@ -114,7 +114,8 @@ const Settings = () => {
       toast({ title: 'פרטי עסק נשמרו', description: 'הפרטים יופיעו על החשבוניות שלך' });
     } catch (error) {
       console.error('Error saving business profile:', error);
-      toast({ title: 'שגיאה', description: 'לא ניתן לשמור את פרטי העסק', variant: 'destructive' });
+      const msg = error instanceof Error ? error.message : 'לא ניתן לשמור את פרטי העסק';
+      toast({ title: 'שגיאה', description: msg, variant: 'destructive' });
     } finally {
       setBusinessSaving(false);
     }
@@ -153,7 +154,7 @@ const Settings = () => {
   const fetchSettings = async () => {
     if (!user) return;
     try {
-      const ref = doc(db, 'users', user.uid, 'settings');
+      const ref = doc(db, 'users', user.uid, 'settings', '_');
       const snap = await getDoc(ref);
       if (snap.exists()) {
         const d = snap.data();

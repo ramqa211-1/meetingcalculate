@@ -63,8 +63,10 @@ const Invoices = () => {
       ]);
       setInvoices(inv);
       setBusinessProfile(profile);
-    } catch {
-      toast({ title: 'שגיאה', description: 'לא ניתן לטעון חשבוניות', variant: 'destructive' });
+    } catch (err) {
+      console.error('fetch invoices failed:', err);
+      const msg = err instanceof Error ? err.message : 'לא ניתן לטעון חשבוניות';
+      toast({ title: 'שגיאה', description: msg, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -82,8 +84,10 @@ const Invoices = () => {
       await cancelInvoice(user.uid, cancelId);
       setInvoices(prev => prev.map(i => i.id === cancelId ? { ...i, status: 'cancelled' } : i));
       toast({ title: 'המסמך בוטל' });
-    } catch {
-      toast({ title: 'שגיאה', description: 'לא ניתן לבטל מסמך', variant: 'destructive' });
+    } catch (err) {
+      console.error('cancel invoice failed:', err);
+      const msg = err instanceof Error ? err.message : 'לא ניתן לבטל מסמך';
+      toast({ title: 'שגיאה', description: msg, variant: 'destructive' });
     } finally {
       setCancelId(null);
     }

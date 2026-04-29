@@ -158,8 +158,10 @@ const CreateInvoiceDialog = ({
         e => e.client_name.trim().toLowerCase() === selectedClient.name.trim().toLowerCase()
       );
       setClientEvents(filtered);
-    } catch {
-      toast({ title: 'שגיאה', description: 'לא ניתן לטעון פגישות', variant: 'destructive' });
+    } catch (err) {
+      console.error('import events failed:', err);
+      const msg = err instanceof Error ? err.message : 'לא ניתן לטעון פגישות';
+      toast({ title: 'שגיאה', description: msg, variant: 'destructive' });
     } finally {
       setLoadingEvents(false);
     }
@@ -229,8 +231,9 @@ const CreateInvoiceDialog = ({
       setOpen(false);
       resetForm();
     } catch (err) {
-      console.error(err);
-      toast({ title: 'שגיאה', description: 'לא ניתן ליצור חשבונית', variant: 'destructive' });
+      console.error('createInvoice failed:', err);
+      const msg = err instanceof Error ? err.message : 'לא ניתן ליצור חשבונית';
+      toast({ title: 'שגיאה', description: msg, variant: 'destructive' });
     } finally {
       setSaving(false);
     }

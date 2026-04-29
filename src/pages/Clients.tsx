@@ -48,8 +48,10 @@ const Clients = () => {
     try {
       const data = await getClients(user.uid);
       setClients(data);
-    } catch {
-      toast({ title: 'שגיאה', description: 'לא ניתן לטעון לקוחות', variant: 'destructive' });
+    } catch (err) {
+      console.error('fetchClients failed:', err);
+      const msg = err instanceof Error ? err.message : 'לא ניתן לטעון לקוחות';
+      toast({ title: 'שגיאה', description: msg, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -67,9 +69,11 @@ const Clients = () => {
       }
       setEditClient(null);
       await fetchClients();
-    } catch {
-      toast({ title: 'שגיאה', description: 'לא ניתן לשמור לקוח', variant: 'destructive' });
-      throw new Error('save failed');
+    } catch (err) {
+      console.error('saveClient failed:', err);
+      const msg = err instanceof Error ? err.message : 'לא ניתן לשמור לקוח';
+      toast({ title: 'שגיאה', description: msg, variant: 'destructive' });
+      throw err;
     }
   };
 
@@ -79,8 +83,10 @@ const Clients = () => {
       await deleteClient(user.uid, deleteId);
       setClients(prev => prev.filter(c => c.id !== deleteId));
       toast({ title: 'לקוח נמחק' });
-    } catch {
-      toast({ title: 'שגיאה', description: 'לא ניתן למחוק לקוח', variant: 'destructive' });
+    } catch (err) {
+      console.error('deleteClient failed:', err);
+      const msg = err instanceof Error ? err.message : 'לא ניתן למחוק לקוח';
+      toast({ title: 'שגיאה', description: msg, variant: 'destructive' });
     } finally {
       setDeleteId(null);
     }
