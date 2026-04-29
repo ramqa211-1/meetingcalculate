@@ -11,6 +11,7 @@ import Admin from "./pages/Admin";
 import AIChat from "./pages/AIChat";
 import Clients from "./pages/Clients";
 import Invoices from "./pages/Invoices";
+import Debug from "./pages/Debug";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/ai-chat" element={<AIChat />} />
           <Route path="/clients" element={<Clients />} />
           <Route path="/invoices" element={<Invoices />} />
+          <Route path="/debug" element={<Debug />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
