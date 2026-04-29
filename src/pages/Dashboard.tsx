@@ -22,9 +22,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import backgroundImage from '@/assets/background.png';
+
+type RangeMode = 'month' | 'quarter' | 'half' | 'year';
 
 interface Event {
   id: string;
@@ -53,6 +56,7 @@ const Dashboard = () => {
   const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
   const [createdInvoice, setCreatedInvoice] = useState<{ invoice: Invoice; profile: BusinessProfile } | null>(null);
   const [selectedMonth, setSelectedMonth] = useState<Date>(() => startOfMonth(new Date()));
+  const [rangeMode, setRangeMode] = useState<RangeMode>('month');
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, isAdmin, loading: authLoading } = useAuth();
@@ -160,14 +164,21 @@ const Dashboard = () => {
     }
   };
 
+  const dateRange = useMemo(() => {
+    if (rangeMode === 'month') {
+      return { start: selectedMonth, end: addMonths(selectedMonth, 1) };
+    }
+    const monthsBack = rangeMode === 'quarter' ? 3 : rangeMode === 'half' ? 6 : 12;
+    const nowMonth = startOfMonth(new Date());
+    return { start: addMonths(nowMonth, -(monthsBack - 1)), end: addMonths(nowMonth, 1) };
+  }, [rangeMode, selectedMonth]);
+
   const filteredEvents = useMemo(() => {
-    const start = selectedMonth;
-    const end = addMonths(selectedMonth, 1);
     return events.filter((e) => {
       const d = new Date(e.date);
-      return d >= start && d < end;
+      return d >= dateRange.start && d < dateRange.end;
     });
-  }, [events, selectedMonth]);
+  }, [events, dateRange]);
 
   const calculateKPIs = (list: Event[]) => {
     const totalRevenue = list.reduce((sum, event) => sum + event.total_amount, 0);
@@ -192,6 +203,15 @@ const Dashboard = () => {
   const goPrevMonth = () => setSelectedMonth((m) => addMonths(m, -1));
   const goNextMonth = () => setSelectedMonth((m) => addMonths(m, 1));
   const monthLabel = format(selectedMonth, 'LLLL yyyy', { locale: he });
+
+  const rangeLabel =
+    rangeMode === 'month'
+      ? monthLabel
+      : rangeMode === 'quarter'
+      ? '3 חודשים אחרונים'
+      : rangeMode === 'half'
+      ? 'חצי שנה אחרונה'
+      : 'שנה אחרונה';
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('he-IL', {
@@ -246,11 +266,11 @@ const Dashboard = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => exportToJSON(filteredEvents, `events-${format(selectedMonth, 'yyyy-MM')}`)}>
-                  JSON ({monthLabel})
+                <DropdownMenuItem onClick={() => exportToJSON(filteredEvents, `events-${rangeMode}`)}>
+                  JSON ({rangeLabel})
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => exportToCSV(filteredEvents as Record<string, unknown>[], `events-${format(selectedMonth, 'yyyy-MM')}`)}>
-                  CSV ({monthLabel})
+                <DropdownMenuItem onClick={() => exportToCSV(filteredEvents as Record<string, unknown>[], `events-${rangeMode}`)}>
+                  CSV ({rangeLabel})
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => exportToJSON(events, 'events-all')}>
                   JSON (כל ההיסטוריה)
@@ -268,29 +288,47 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="flex items-center justify-center gap-2 sm:gap-4 py-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={goPrevMonth}
-            disabled={!canGoPrev}
-            title={canGoPrev ? 'חודש קודם' : 'הארכיון מוגבל ל-12 חודשים'}
+        <div className="flex flex-col items-center gap-3 py-2">
+          <ToggleGroup
+            type="single"
+            value={rangeMode}
+            onValueChange={(v) => v && setRangeMode(v as RangeMode)}
+            className="bg-white/65 backdrop-blur-sm border rounded-md"
           >
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-          <span className="text-base sm:text-lg font-semibold capitalize min-w-[140px] text-center">
-            {monthLabel}
-          </span>
-          <Button variant="outline" size="sm" onClick={goNextMonth} title="חודש הבא">
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
+            <ToggleGroupItem value="month" className="px-3 sm:px-4">חודש</ToggleGroupItem>
+            <ToggleGroupItem value="quarter" className="px-3 sm:px-4">3 חודשים</ToggleGroupItem>
+            <ToggleGroupItem value="half" className="px-3 sm:px-4">חצי שנה</ToggleGroupItem>
+            <ToggleGroupItem value="year" className="px-3 sm:px-4">שנה</ToggleGroupItem>
+          </ToggleGroup>
+
+          {rangeMode === 'month' ? (
+            <div className="flex items-center gap-2 sm:gap-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goPrevMonth}
+                disabled={!canGoPrev}
+                title={canGoPrev ? 'חודש קודם' : 'הארכיון מוגבל ל-12 חודשים'}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+              <span className="text-base sm:text-lg font-semibold capitalize min-w-[140px] text-center">
+                {monthLabel}
+              </span>
+              <Button variant="outline" size="sm" onClick={goNextMonth} title="חודש הבא">
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="text-base sm:text-lg font-semibold">{rangeLabel}</div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <KPICard
             title="הכנסה כוללת"
             value={formatCurrency(kpis.totalRevenue)}
-            subtitle={`${monthLabel} — מכל הפגישות`}
+            subtitle={`${rangeLabel} — מכל הפגישות`}
             icon={<DollarSign className="w-5 h-5" />}
             colorClass="bg-primary/10 text-primary"
           />
@@ -319,7 +357,7 @@ const Dashboard = () => {
 
         <div className="space-y-4">
           <h2 className="text-xl sm:text-2xl font-bold text-foreground">
-            פגישות — {monthLabel}
+            פגישות — {rangeLabel}
           </h2>
           <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
             <EventsTable
