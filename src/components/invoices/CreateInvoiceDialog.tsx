@@ -198,10 +198,14 @@ const CreateInvoiceDialog = ({
     setSaving(true);
     try {
       const profile = await getBusinessProfile(user.uid);
+      console.log('[CreateInvoice] business profile fetched:', profile);
       if (!profile?.osek_id) {
+        const desc = profile === null
+          ? 'לא נמצא פרופיל עסק. עבור להגדרות → "פרטי עסק לחשבוניות" → לחץ "שמור פרטי עסק"'
+          : `נמצא פרופיל אך חסר ת.ז. (osek_id). פרטים שנמצאו: ${JSON.stringify(profile)}`;
         toast({
           title: 'חסרים פרטי עסק',
-          description: 'מלא את פרטי העסק בהגדרות לפני הפקת חשבונית',
+          description: desc,
           variant: 'destructive',
         });
         return;

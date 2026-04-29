@@ -16,7 +16,9 @@ import type { Client, Invoice, BusinessProfile, InvoiceItem, DocumentType } from
 
 export async function getBusinessProfile(userId: string): Promise<BusinessProfile | null> {
   const ref = doc(db, 'users', userId, 'business_profile', '_');
+  console.log('[getBusinessProfile] reading path:', ref.path);
   const snap = await getDoc(ref);
+  console.log('[getBusinessProfile] exists:', snap.exists(), 'data:', snap.data());
   if (!snap.exists()) return null;
   return snap.data() as BusinessProfile;
 }
