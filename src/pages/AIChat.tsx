@@ -165,27 +165,32 @@ const AIChat = () => {
 
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div>
-          <div className="flex items-center gap-2">
-            <Bot className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">צ'אט AI</h1>
+      <div className="max-w-4xl mx-auto space-y-8 md:space-y-10">
+        <header className="border-b border-foreground/15 pb-6 md:pb-8">
+          <div className="eyebrow-lg mb-3 flex items-center gap-3">
+            <span>שיחה עם הסוכן</span>
+            <span className="h-px w-8 bg-foreground/40" />
+            <span className="font-mono tabular-nums">§ Oracle</span>
           </div>
-          <p className="text-muted-foreground mt-1">
-            שאל שאלות על הפגישות, ההכנסות והפרויקטים שלך
+          <h1 className="font-serif text-4xl md:text-6xl leading-[1.05] text-foreground">
+            צ'אט AI
+          </h1>
+          <p className="mt-3 text-sm md:text-base text-muted-foreground max-w-md leading-relaxed">
+            שאל שאלות על הפגישות, ההכנסות והפרויקטים שלך — הסוכן מבין הקשר ויודע את הנתונים
           </p>
-        </div>
+        </header>
 
-        <Card className="h-[calc(100vh-200px)] md:h-[600px] flex flex-col">
-          <CardHeader className="border-b">
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-primary" />
-              עוזר AI
-            </CardTitle>
-            <CardDescription>
+        <Card className="h-[calc(100vh-280px)] md:h-[600px] flex flex-col rounded-sm">
+          <CardHeader className="border-b border-border/60 pb-4">
+            <div className="eyebrow mb-1 flex items-center gap-2">
+              <Sparkles className="w-3 h-3" />
+              <span>עוזר חכם</span>
+            </div>
+            <CardTitle className="font-serif text-2xl">שיחה</CardTitle>
+            <CardDescription className="text-xs tracking-wide">
               {isAdmin
-                ? 'אתה אדמין - אתה יכול ליצור, לעדכן ולמחוק רשומות'
-                : 'אתה יכול לשאול שאלות ולקבל מידע על הנתונים שלך'}
+                ? 'הרשאת אדמין · ניתן ליצור, לעדכן ולמחוק רשומות'
+                : 'מצב קריאה · שאלות ותשובות בלבד'}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col p-0">
@@ -199,19 +204,19 @@ const AIChat = () => {
                     }`}
                   >
                     {message.role === 'assistant' && (
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <Bot className="w-4 h-4 text-primary" />
+                      <div className="w-8 h-8 rounded-sm bg-foreground text-background flex items-center justify-center flex-shrink-0">
+                        <Bot className="w-3.5 h-3.5" />
                       </div>
                     )}
                     <div
-                      className={`max-w-[80%] rounded-lg p-3 ${
+                      className={`max-w-[80%] rounded-sm p-3 ${
                         message.role === 'user'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted'
+                          ? 'bg-foreground text-background'
+                          : 'bg-muted border border-border/60'
                       }`}
                     >
-                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                      <p className="text-xs opacity-70 mt-1">
+                      <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                      <p className="text-[10px] font-mono tabular-nums tracking-wider opacity-60 mt-2">
                         {message.timestamp.toLocaleTimeString('he-IL', {
                           hour: '2-digit',
                           minute: '2-digit',
@@ -219,19 +224,20 @@ const AIChat = () => {
                       </p>
                     </div>
                     {message.role === 'user' && (
-                      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                        <span className="text-xs">אתה</span>
+                      <div className="w-8 h-8 rounded-sm bg-muted border border-border flex items-center justify-center flex-shrink-0">
+                        <span className="text-[10px] font-mono tracking-wider">YOU</span>
                       </div>
                     )}
                   </div>
                 ))}
                 {loading && (
                   <div className="flex gap-3 justify-start">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Bot className="w-4 h-4 text-primary" />
+                    <div className="w-8 h-8 rounded-sm bg-foreground text-background flex items-center justify-center">
+                      <Bot className="w-3.5 h-3.5" />
                     </div>
-                    <div className="bg-muted rounded-lg p-3">
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                    <div className="bg-muted border border-border/60 rounded-sm p-3 flex items-center gap-2">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span className="text-xs font-mono tracking-wider text-muted-foreground">חושב...</span>
                     </div>
                   </div>
                 )}

@@ -289,11 +289,20 @@ const Settings = () => {
 
   return (
     <Layout>
-      <div className="max-w-4xl space-y-6 md:space-y-8">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">הגדרות</h1>
-          <p className="text-muted-foreground mt-1">נהל את ההגדרות האישיות והעסקיות שלך</p>
-        </div>
+      <div className="max-w-4xl space-y-8 md:space-y-10">
+        <header className="border-b border-foreground/15 pb-6 md:pb-8">
+          <div className="eyebrow-lg mb-3 flex items-center gap-3">
+            <span>פרופיל וקונפיגורציה</span>
+            <span className="h-px w-8 bg-foreground/40" />
+            <span className="font-mono tabular-nums">§ Settings</span>
+          </div>
+          <h1 className="font-serif text-4xl md:text-6xl leading-[1.05] text-foreground">
+            הגדרות
+          </h1>
+          <p className="mt-3 text-sm md:text-base text-muted-foreground max-w-md leading-relaxed">
+            נהל את הפרטים האישיים, התמחור וההעדפות העסקיות שלך
+          </p>
+        </header>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -576,8 +585,9 @@ const Settings = () => {
                     />
                   </div>
                 </div>
-                <div className="p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-amber-800">
-                  <strong>עוסק פטור</strong> — החשבוניות שלך לא יכללו מע"מ. המסמכים יסומנו "פטור ממע"מ".
+                <div className="border-r-2 border-primary bg-primary/5 px-4 py-3 text-sm text-foreground/85">
+                  <span className="eyebrow text-primary mb-1 block">סטטוס מס</span>
+                  <strong className="font-serif">עוסק פטור</strong> — החשבוניות לא יכללו מע"מ. המסמכים יסומנו "פטור ממע"מ".
                 </div>
                 <Button
                   type="button"

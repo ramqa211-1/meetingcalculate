@@ -104,22 +104,36 @@ const Clients = () => {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">לקוחות</h1>
-            <p className="text-muted-foreground mt-1">ניהול רשימת הלקוחות שלך</p>
+      <div className="space-y-8 md:space-y-10">
+        <header className="border-b border-foreground/15 pb-6 md:pb-8">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+            <div>
+              <div className="eyebrow-lg mb-3 flex items-center gap-3">
+                <span>פנקס לקוחות</span>
+                <span className="h-px w-8 bg-foreground/40" />
+                <span className="font-mono tabular-nums">§ Roster</span>
+                <span className="font-mono tabular-nums text-muted-foreground">
+                  · {clients.length.toString().padStart(2, '0')}
+                </span>
+              </div>
+              <h1 className="font-serif text-4xl md:text-6xl leading-[1.05] text-foreground">
+                לקוחות
+              </h1>
+              <p className="mt-3 text-sm md:text-base text-muted-foreground max-w-md leading-relaxed">
+                ספר הכתובות של העסק — ת.ז., ח.פ., פרטי קשר וזיהוי לחשבוניות
+              </p>
+            </div>
+            <Button
+              onClick={() => { setEditClient(null); setDialogOpen(true); }}
+              className="gap-2 rounded-sm font-mono text-xs tracking-wider uppercase self-start md:self-auto"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              לקוח חדש
+            </Button>
           </div>
-          <Button
-            onClick={() => { setEditClient(null); setDialogOpen(true); }}
-            className="gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            לקוח חדש
-          </Button>
-        </div>
+        </header>
 
-        <div className="rounded-lg border bg-card overflow-x-auto">
+        <div className="rounded-sm border border-border bg-card overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>

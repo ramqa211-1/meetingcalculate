@@ -95,9 +95,13 @@ const Invoices = () => {
 
   const statusBadge = (status: Invoice['status']) =>
     status === 'issued' ? (
-      <Badge className="bg-green-100 text-green-800 hover:bg-green-100">בתוקף</Badge>
+      <Badge variant="outline" className="border-accent/50 text-accent font-mono text-[10px] tracking-[0.18em] uppercase rounded-sm">
+        בתוקף
+      </Badge>
     ) : (
-      <Badge variant="destructive">בוטל</Badge>
+      <Badge variant="outline" className="border-destructive/50 text-destructive font-mono text-[10px] tracking-[0.18em] uppercase rounded-sm">
+        בוטל
+      </Badge>
     );
 
   if (loading) {
@@ -112,20 +116,37 @@ const Invoices = () => {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">חשבוניות ומסמכים</h1>
-            <p className="text-muted-foreground mt-1">ניהול חשבוניות, קבלות ומסמכים עסקיים</p>
+      <div className="space-y-8 md:space-y-10">
+        <header className="border-b border-foreground/15 pb-6 md:pb-8">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+            <div>
+              <div className="eyebrow-lg mb-3 flex items-center gap-3">
+                <span>תיק חשבוניות</span>
+                <span className="h-px w-8 bg-foreground/40" />
+                <span className="font-mono tabular-nums">§ Ledger</span>
+                <span className="font-mono tabular-nums text-muted-foreground">
+                  · {invoices.length.toString().padStart(3, '0')}
+                </span>
+              </div>
+              <h1 className="font-serif text-4xl md:text-6xl leading-[1.05] text-foreground">
+                חשבוניות ומסמכים
+              </h1>
+              <p className="mt-3 text-sm md:text-base text-muted-foreground max-w-md leading-relaxed">
+                הפקה, ניהול וביטול של חשבוניות, קבלות ומסמכים עסקיים — חתום ומאומת
+              </p>
+            </div>
+            <div className="self-start md:self-end">
+              <CreateInvoiceDialog onCreated={handleCreated} />
+            </div>
           </div>
-          <CreateInvoiceDialog onCreated={handleCreated} />
-        </div>
+        </header>
 
         {!businessProfile?.osek_id && (
-          <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 text-sm">
-            <strong>שים לב:</strong> לפני הפקת חשבונית, מלא את{' '}
+          <div className="border-r-2 border-primary bg-primary/5 px-4 py-3 text-sm text-foreground/85">
+            <span className="eyebrow text-primary mb-1 block">דרושה השלמה</span>
+            לפני הפקת חשבונית, מלא את{' '}
             <button
-              className="underline font-medium"
+              className="underline underline-offset-2 font-medium hover:text-primary"
               onClick={() => navigate('/settings')}
             >
               פרטי העסק בהגדרות
@@ -134,7 +155,7 @@ const Invoices = () => {
           </div>
         )}
 
-        <div className="rounded-lg border bg-card overflow-x-auto">
+        <div className="rounded-sm border border-border bg-card overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>

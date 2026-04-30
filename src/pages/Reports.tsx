@@ -36,7 +36,14 @@ interface Event {
   source: string;
 }
 
-const COLORS = ['hsl(243, 75%, 59%)', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)', 'hsl(199, 89%, 48%)', 'hsl(280, 61%, 50%)'];
+// Editorial financial palette — earthy, warm, distinctive
+const COLORS = [
+  'hsl(9 65% 32%)',   // oxblood
+  'hsl(155 35% 26%)', // forest
+  'hsl(32 70% 38%)',  // mustard
+  'hsl(200 35% 30%)', // deep teal
+  'hsl(25 35% 25%)',  // cocoa
+];
 
 const Reports = () => {
   const [events, setEvents] = useState<Event[]>([]);
@@ -144,27 +151,34 @@ const Reports = () => {
 
   return (
     <Layout>
-      <div className="space-y-6 md:space-y-8">
-        <div>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">דוח חודשי</h1>
-            {isAdmin && (
-              <div className="flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-md text-sm">
-                <Shield className="w-4 h-4" />
-                <span>אדמין</span>
+      <div className="space-y-8 md:space-y-10">
+        <header className="border-b border-foreground/15 pb-6 md:pb-8">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+            <div>
+              <div className="eyebrow-lg mb-3 flex items-center gap-3">
+                <span>דוח רבעוני</span>
+                <span className="h-px w-8 bg-foreground/40" />
+                <span className="font-mono tabular-nums">§ Reports</span>
+                {isAdmin && (
+                  <span className="inline-flex items-center gap-1 border border-primary/40 text-primary px-2 py-0.5 text-[10px] tracking-[0.2em] uppercase">
+                    <Shield className="w-3 h-3" />
+                    אדמין
+                  </span>
+                )}
               </div>
-            )}
-          </div>
-          <p className="text-muted-foreground mt-1">
-            {format(new Date(), 'MMMM yyyy', { locale: he })}
-            {isAdmin && ' - כל האירועים במערכת'}
-          </p>
-          <div className="mt-2">
+              <h1 className="font-serif text-4xl md:text-6xl leading-[1.05] text-foreground">
+                דוח חודשי
+              </h1>
+              <p className="mt-3 text-sm md:text-base text-muted-foreground max-w-md leading-relaxed">
+                {format(new Date(), 'MMMM yyyy', { locale: he })}
+                {isAdmin && ' · כל האירועים במערכת'}
+              </p>
+            </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Download className="w-4 h-4" />
-                  ייצוא נתונים
+                <Button variant="outline" size="sm" className="gap-2 rounded-sm font-mono text-xs tracking-wider uppercase">
+                  <Download className="w-3.5 h-3.5" />
+                  ייצוא
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
@@ -177,7 +191,7 @@ const Reports = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        </div>
+        </header>
 
         <AIInsightsCard
           events={events}
@@ -191,38 +205,39 @@ const Reports = () => {
             title="הכנסה צפויה החודש"
             value={formatCurrency(kpis.totalRevenue)}
             subtitle="סך הכל"
-            icon={<DollarSign className="w-5 h-5" />}
-            colorClass="bg-primary/10 text-primary"
+            icon={<DollarSign />}
+            colorClass="text-primary"
           />
           <KPICard
             title="כבר שולם"
             value={formatCurrency(kpis.paidRevenue)}
             subtitle="הכנסה שהתקבלה"
-            icon={<TrendingUp className="w-5 h-5" />}
-            colorClass="bg-accent/10 text-accent"
+            icon={<TrendingUp />}
+            colorClass="text-accent"
           />
           <KPICard
             title="מספר אירועים"
             value={kpis.totalEvents}
             subtitle="החודש"
-            icon={<Calendar className="w-5 h-5" />}
-            colorClass="bg-info/10 text-info"
+            icon={<Calendar />}
+            colorClass="text-foreground"
           />
           <KPICard
             title="שעות מצטברות"
             value={kpis.totalHours.toFixed(1)}
             subtitle={`ממוצע ${formatCurrency(kpis.avgRate)}/שעה`}
-            icon={<Clock className="w-5 h-5" />}
-            colorClass="bg-warning/10 text-warning"
+            icon={<Clock />}
+            colorClass="text-foreground"
           />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>הכנסות לפי שבוע</CardTitle>
+          <Card className="rounded-sm">
+            <CardHeader className="border-b border-border/60 pb-4">
+              <div className="eyebrow mb-1">תרשים I</div>
+              <CardTitle className="font-serif text-2xl">הכנסות לפי שבוע</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               <ResponsiveContainer width="100%" height={isMobile ? 250 : 300}>
                 <BarChart data={weeklyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                   <XAxis dataKey="name" tick={{ fontSize: 12 }} angle={0} />
@@ -244,17 +259,18 @@ const Reports = () => {
                     labelStyle={{ color: 'hsl(var(--foreground))' }}
                   />
                   <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                  <Bar dataKey="revenue" fill="hsl(243, 75%, 59%)" name="הכנסה" radius={[8, 8, 0, 0]} />
+                  <Bar dataKey="revenue" fill="hsl(9 65% 32%)" name="הכנסה" />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>חלוקה לפי סוג שירות</CardTitle>
+          <Card className="rounded-sm">
+            <CardHeader className="border-b border-border/60 pb-4">
+              <div className="eyebrow mb-1">תרשים II</div>
+              <CardTitle className="font-serif text-2xl">חלוקה לפי סוג שירות</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               <ResponsiveContainer width="100%" height={isMobile ? 250 : 300}>
                 <RePieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                   <Pie
@@ -287,27 +303,33 @@ const Reports = () => {
           </Card>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>סטטיסטיקות נוספות</CardTitle>
+        <Card className="rounded-sm">
+          <CardHeader className="border-b border-border/60 pb-4">
+            <div className="eyebrow mb-1">סטטיסטיקות נוספות</div>
+            <CardTitle className="font-serif text-2xl">חיתוכי מפתח</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-primary">{formatCurrency(kpis.unpaidRevenue)}</p>
-                <p className="text-sm text-muted-foreground mt-1">ממתין לתשלום</p>
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:divide-x sm:divide-border/70 sm:[direction:rtl]">
+              <div className="text-center px-4">
+                <p className="font-mono tabular-nums text-3xl md:text-4xl text-primary leading-none">
+                  {formatCurrency(kpis.unpaidRevenue)}
+                </p>
+                <div className="h-px w-10 bg-foreground/30 mx-auto my-3" />
+                <p className="eyebrow text-muted-foreground">ממתין לתשלום</p>
               </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-accent">
+              <div className="text-center px-4">
+                <p className="font-mono tabular-nums text-3xl md:text-4xl text-foreground leading-none">
                   {((kpis.paidRevenue / kpis.totalRevenue) * 100 || 0).toFixed(1)}%
                 </p>
-                <p className="text-sm text-muted-foreground mt-1">אחוז תשלום</p>
+                <div className="h-px w-10 bg-foreground/30 mx-auto my-3" />
+                <p className="eyebrow text-muted-foreground">אחוז תשלום</p>
               </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-info">
+              <div className="text-center px-4">
+                <p className="font-mono tabular-nums text-3xl md:text-4xl text-foreground leading-none">
                   {(kpis.totalEvents > 0 ? kpis.totalRevenue / kpis.totalEvents : 0).toFixed(0)} ₪
                 </p>
-                <p className="text-sm text-muted-foreground mt-1">ממוצע לפגישה</p>
+                <div className="h-px w-10 bg-foreground/30 mx-auto my-3" />
+                <p className="eyebrow text-muted-foreground">ממוצע לפגישה</p>
               </div>
             </div>
           </CardContent>
