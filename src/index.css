@@ -10,99 +10,77 @@
 
 @layer base {
   :root {
-    /* Surfaces */
-    --background: 42 35% 95%;          /* warm cream parchment */
-    --foreground: 25 18% 12%;          /* warm ink */
+    /* Cinematic dark — deep warm-black canvas with coral accent */
+    --background: 30 22% 4%;            /* #0d0a08 */
+    --foreground: 42 50% 91%;           /* #f4ede0 */
 
+    --card: 25 15% 8%;                  /* #1a1612 */
+    --card-foreground: 42 50% 91%;
+
+    --popover: 25 18% 6%;               /* #13100d */
+    --popover-foreground: 42 50% 91%;
+
+    /* Primary — vibrant coral. Distinctive, glowing. */
+    --primary: 13 73% 64%;              /* #e87a5d */
+    --primary-foreground: 30 22% 4%;
+
+    --secondary: 25 14% 12%;
+    --secondary-foreground: 42 50% 91%;
+
+    --muted: 25 14% 12%;
+    --muted-foreground: 38 22% 65%;
+
+    /* Accent — paid/positive. Soft mint-green that reads on dark. */
+    --accent: 145 45% 60%;
+    --accent-foreground: 30 22% 4%;
+
+    --destructive: 9 65% 50%;
+    --destructive-foreground: 42 50% 96%;
+
+    --border: 30 15% 14%;
+    --input: 30 15% 14%;
+    --ring: 13 73% 60%;
+
+    --radius: 0.625rem;
+
+    --success: 145 45% 55%;
+    --success-foreground: 30 22% 4%;
+
+    --warning: 32 80% 60%;
+    --warning-foreground: 30 22% 4%;
+
+    --info: 200 50% 55%;
+    --info-foreground: 30 22% 4%;
+
+    /* Charts — coral-led cinematic palette */
+    --chart-1: 13 73% 64%;
+    --chart-2: 9 60% 50%;
+    --chart-3: 32 80% 60%;
+    --chart-4: 145 45% 55%;
+    --chart-5: 25 35% 45%;
+  }
+
+  .light {
+    /* Optional light theme — kept for completeness, not the default */
+    --background: 42 35% 95%;
+    --foreground: 25 18% 12%;
     --card: 0 0% 100%;
     --card-foreground: 25 18% 12%;
-
     --popover: 42 28% 97%;
     --popover-foreground: 25 18% 12%;
-
-    /* Primary — deep oxblood. Distinctive, not generic blue/purple. */
     --primary: 9 65% 32%;
     --primary-foreground: 42 35% 96%;
-
     --secondary: 42 22% 90%;
     --secondary-foreground: 25 18% 18%;
-
     --muted: 42 18% 92%;
     --muted-foreground: 30 10% 40%;
-
-    /* Accent — forest green for paid / positive */
     --accent: 155 35% 26%;
     --accent-foreground: 42 35% 96%;
-
     --destructive: 0 60% 38%;
     --destructive-foreground: 42 35% 96%;
-
     --border: 38 18% 82%;
     --input: 38 18% 82%;
     --ring: 9 55% 38%;
-
-    --radius: 0.25rem;
-
-    --success: 155 40% 28%;
-    --success-foreground: 42 35% 96%;
-
-    --warning: 32 70% 38%;
-    --warning-foreground: 42 35% 96%;
-
-    --info: 200 35% 30%;
-    --info-foreground: 42 35% 96%;
-
-    /* Charts — warm editorial palette */
-    --chart-1: 9 65% 32%;
-    --chart-2: 155 35% 26%;
-    --chart-3: 32 70% 38%;
-    --chart-4: 200 35% 30%;
-    --chart-5: 25 35% 25%;
-  }
-
-  .dark {
-    --background: 25 15% 8%;
-    --foreground: 42 22% 92%;
-
-    --card: 25 14% 11%;
-    --card-foreground: 42 22% 92%;
-
-    --popover: 25 14% 11%;
-    --popover-foreground: 42 22% 92%;
-
-    --primary: 9 60% 48%;
-    --primary-foreground: 42 22% 96%;
-
-    --secondary: 25 12% 16%;
-    --secondary-foreground: 42 22% 92%;
-
-    --muted: 25 12% 16%;
-    --muted-foreground: 38 12% 65%;
-
-    --accent: 155 30% 38%;
-    --accent-foreground: 42 22% 96%;
-
-    --destructive: 0 55% 45%;
-    --destructive-foreground: 42 22% 96%;
-
-    --border: 25 12% 18%;
-    --input: 25 12% 18%;
-    --ring: 9 55% 50%;
-
-    --success: 155 35% 38%;
-    --success-foreground: 42 22% 96%;
-
-    --warning: 32 60% 48%;
-    --warning-foreground: 42 22% 96%;
-
-    --info: 200 30% 42%;
-    --info-foreground: 42 22% 96%;
-
-    --chart-1: 9 60% 48%;
-    --chart-2: 155 35% 38%;
-    --chart-3: 32 60% 48%;
-    --chart-4: 200 30% 42%;
-    --chart-5: 25 35% 40%;
   }
 }
 
@@ -112,11 +90,11 @@
   }
 
   html {
-    /* Subtle paper grain — barely visible noise that adds tactility */
+    /* Cinematic atmosphere — radial coral glows on a deep warm-black canvas */
     background-color: hsl(var(--background));
     background-image:
-      radial-gradient(circle at 20% 0%, hsl(38 30% 90% / 0.5) 0%, transparent 50%),
-      radial-gradient(circle at 80% 100%, hsl(28 25% 88% / 0.4) 0%, transparent 50%);
+      radial-gradient(1200px 600px at 15% -5%, hsl(13 73% 50% / 0.12) 0%, transparent 60%),
+      radial-gradient(900px 500px at 90% 110%, hsl(9 60% 36% / 0.18) 0%, transparent 55%);
     background-attachment: fixed;
   }
 
@@ -161,4 +139,62 @@
 .font-mono {
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
+}
+
+/* ─── Cinematic dark utilities ─── */
+@layer utilities {
+  .gradient-text-coral {
+    background: linear-gradient(110deg, #f5b8a0 0%, #e87a5d 35%, #c94e30 70%, #f5b8a0 100%);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+  .glow-coral {
+    box-shadow:
+      0 0 0 1px hsl(15 70% 55% / 0.25),
+      0 8px 30px -8px hsl(15 70% 50% / 0.45),
+      0 0 60px -10px hsl(15 80% 55% / 0.35);
+  }
+  .glow-coral-soft {
+    box-shadow: 0 0 80px -20px hsl(15 80% 55% / 0.55);
+  }
+  .text-coral { color: #e87a5d; }
+  .border-coral\/40 { border-color: hsl(15 70% 55% / 0.4); }
+}
+
+/* float animation — subtle breathing motion for hero objects */
+@keyframes hero-float-a {
+  0%, 100% { transform: translateY(0) rotate(-8deg); }
+  50%      { transform: translateY(-14px) rotate(-6deg); }
+}
+@keyframes hero-float-b {
+  0%, 100% { transform: translateY(0) rotate(4deg); }
+  50%      { transform: translateY(-10px) rotate(6deg); }
+}
+@keyframes hero-float-c {
+  0%, 100% { transform: translateY(0) rotate(-2deg); }
+  50%      { transform: translateY(-18px) rotate(0deg); }
+}
+@keyframes hero-glow-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50%      { opacity: 0.7; transform: scale(1.06); }
+}
+@keyframes hero-shine {
+  0%   { background-position: 200% 50%; }
+  100% { background-position: -200% 50%; }
+}
+
+.hero-float-a { animation: hero-float-a 7s ease-in-out infinite; }
+.hero-float-b { animation: hero-float-b 6s ease-in-out infinite; animation-delay: 0.4s; }
+.hero-float-c { animation: hero-float-c 8s ease-in-out infinite; animation-delay: 0.8s; }
+.hero-glow-pulse { animation: hero-glow-pulse 5s ease-in-out infinite; }
+.hero-shine { animation: hero-shine 8s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-float-a, .hero-float-b, .hero-float-c,
+  .hero-glow-pulse, .hero-shine {
+    animation: none !important;
+  }
 }

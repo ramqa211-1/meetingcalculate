@@ -4,6 +4,7 @@ import { collection, query, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
 import Layout from '@/components/Layout';
+import PageMasthead from '@/components/PageMasthead';
 import KPICard from '@/components/dashboard/KPICard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -42,16 +43,16 @@ type RangeMode = 'quarter' | 'half' | 'year';
 const startOfMonth = (d: Date) => new Date(d.getFullYear(), d.getMonth(), 1);
 const addMonths = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth() + n, 1);
 
-// Editorial financial palette — earthy, warm, distinctive
+// Cinematic coral-led palette — tuned for dark backgrounds
 const COLORS = [
-  'hsl(9 65% 32%)',   // oxblood
-  'hsl(155 35% 26%)', // forest
-  'hsl(32 70% 38%)',  // mustard
-  'hsl(200 35% 30%)', // deep teal
-  'hsl(25 35% 25%)',  // cocoa
-  'hsl(280 25% 35%)', // deep plum
-  'hsl(355 45% 40%)', // crimson
-  'hsl(45 45% 50%)',  // antique gold
+  'hsl(13 73% 64%)',  // coral primary
+  'hsl(9 60% 50%)',   // deep coral
+  'hsl(32 80% 60%)',  // amber
+  'hsl(145 45% 55%)', // mint accent
+  'hsl(355 60% 55%)', // crimson
+  'hsl(25 45% 50%)',  // bronze
+  'hsl(45 70% 60%)',  // honey
+  'hsl(200 50% 55%)', // sky
 ];
 
 const formatCurrency = (n: number) =>
@@ -197,33 +198,25 @@ const Statistics = () => {
   return (
     <Layout>
       <div className="space-y-8 md:space-y-10">
-        <header className="border-b border-foreground/15 pb-6 md:pb-8">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-            <div>
-              <div className="eyebrow-lg mb-3 flex items-center gap-3">
-                <span>תובנות ומגמות</span>
-                <span className="h-px w-8 bg-foreground/40" />
-                <span className="font-mono tabular-nums">Analytics</span>
-              </div>
-              <h1 className="font-serif text-4xl md:text-6xl leading-[1.05] text-foreground">
-                סטטיסטיקות וגרפים
-              </h1>
-              <p className="mt-3 text-sm md:text-base text-muted-foreground max-w-md leading-relaxed">
-                תובנות ומגמות מהנתונים שלך — {rangeLabel}
-              </p>
-            </div>
+        <PageMasthead
+          eyebrow="תובנות ומגמות"
+          marker="§ Analytics"
+          headlineLight="סטטיסטיקות"
+          headlineAccent="וגרפים."
+          description={`תובנות ומגמות מהנתונים שלך — ${rangeLabel}`}
+          actions={
             <ToggleGroup
               type="single"
               value={rangeMode}
               onValueChange={(v) => v && setRangeMode(v as RangeMode)}
-              className="bg-card border border-border rounded-sm divide-x divide-border/70 [&>*]:rounded-none [&>*:first-child]:rounded-r-sm [&>*:last-child]:rounded-l-sm"
+              className="bg-card/60 backdrop-blur-sm border border-foreground/10 rounded-full p-1 gap-1"
             >
-              <ToggleGroupItem value="quarter" className="px-3 sm:px-5 text-xs sm:text-sm font-medium data-[state=on]:bg-foreground data-[state=on]:text-background">3 חודשים</ToggleGroupItem>
-              <ToggleGroupItem value="half" className="px-3 sm:px-5 text-xs sm:text-sm font-medium data-[state=on]:bg-foreground data-[state=on]:text-background">חצי שנה</ToggleGroupItem>
-              <ToggleGroupItem value="year" className="px-3 sm:px-5 text-xs sm:text-sm font-medium data-[state=on]:bg-foreground data-[state=on]:text-background">שנה</ToggleGroupItem>
+              <ToggleGroupItem value="quarter" className="rounded-full px-4 text-xs font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all">3 חודשים</ToggleGroupItem>
+              <ToggleGroupItem value="half" className="rounded-full px-4 text-xs font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all">חצי שנה</ToggleGroupItem>
+              <ToggleGroupItem value="year" className="rounded-full px-4 text-xs font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all">שנה</ToggleGroupItem>
             </ToggleGroup>
-          </div>
-        </header>
+          }
+        />
 
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

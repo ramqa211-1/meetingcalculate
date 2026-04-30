@@ -5,6 +5,7 @@ import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
 import { callOpenAI } from '@/lib/openai';
 import Layout from '@/components/Layout';
+import PageMasthead from '@/components/PageMasthead';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -166,27 +167,21 @@ const AIChat = () => {
   return (
     <Layout>
       <div className="max-w-4xl mx-auto space-y-8 md:space-y-10">
-        <header className="border-b border-foreground/15 pb-6 md:pb-8">
-          <div className="eyebrow-lg mb-3 flex items-center gap-3">
-            <span>שיחה עם הסוכן</span>
-            <span className="h-px w-8 bg-foreground/40" />
-            <span className="font-mono tabular-nums">§ Oracle</span>
-          </div>
-          <h1 className="font-serif text-4xl md:text-6xl leading-[1.05] text-foreground">
-            צ'אט AI
-          </h1>
-          <p className="mt-3 text-sm md:text-base text-muted-foreground max-w-md leading-relaxed">
-            שאל שאלות על הפגישות, ההכנסות והפרויקטים שלך — הסוכן מבין הקשר ויודע את הנתונים
-          </p>
-        </header>
+        <PageMasthead
+          eyebrow="שיחה עם הסוכן"
+          marker="§ Oracle"
+          headlineLight="צ'אט"
+          headlineAccent="חכם."
+          description="שאל שאלות על הפגישות, ההכנסות והפרויקטים שלך — הסוכן מבין הקשר ויודע את הנתונים"
+        />
 
-        <Card className="h-[calc(100vh-280px)] md:h-[600px] flex flex-col rounded-sm">
-          <CardHeader className="border-b border-border/60 pb-4">
-            <div className="eyebrow mb-1 flex items-center gap-2">
+        <Card className="h-[calc(100vh-280px)] md:h-[600px] flex flex-col rounded-2xl bg-gradient-to-b from-card/80 to-card/40 backdrop-blur-sm border-foreground/10">
+          <CardHeader className="border-b border-foreground/10 pb-4">
+            <div className="text-[10px] tracking-[0.3em] uppercase font-mono text-primary mb-1 flex items-center gap-2">
               <Sparkles className="w-3 h-3" />
               <span>עוזר חכם</span>
             </div>
-            <CardTitle className="font-serif text-2xl">שיחה</CardTitle>
+            <CardTitle className="font-serif text-2xl text-foreground">שיחה</CardTitle>
             <CardDescription className="text-xs tracking-wide">
               {isAdmin
                 ? 'הרשאת אדמין · ניתן ליצור, לעדכן ולמחוק רשומות'
@@ -204,15 +199,16 @@ const AIChat = () => {
                     }`}
                   >
                     {message.role === 'assistant' && (
-                      <div className="w-8 h-8 rounded-sm bg-foreground text-background flex items-center justify-center flex-shrink-0">
+                      <div className="relative w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0">
                         <Bot className="w-3.5 h-3.5" />
+                        <div className="absolute inset-0 bg-primary rounded-full blur-md opacity-50 -z-10" />
                       </div>
                     )}
                     <div
-                      className={`max-w-[80%] rounded-sm p-3 ${
+                      className={`max-w-[80%] rounded-2xl px-4 py-3 ${
                         message.role === 'user'
-                          ? 'bg-foreground text-background'
-                          : 'bg-muted border border-border/60'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-card/80 border border-foreground/10 backdrop-blur-sm'
                       }`}
                     >
                       <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
@@ -224,19 +220,20 @@ const AIChat = () => {
                       </p>
                     </div>
                     {message.role === 'user' && (
-                      <div className="w-8 h-8 rounded-sm bg-muted border border-border flex items-center justify-center flex-shrink-0">
-                        <span className="text-[10px] font-mono tracking-wider">YOU</span>
+                      <div className="w-8 h-8 rounded-full bg-foreground/[0.06] border border-foreground/15 flex items-center justify-center flex-shrink-0">
+                        <span className="text-[10px] font-mono tracking-wider text-foreground/70">YOU</span>
                       </div>
                     )}
                   </div>
                 ))}
                 {loading && (
                   <div className="flex gap-3 justify-start">
-                    <div className="w-8 h-8 rounded-sm bg-foreground text-background flex items-center justify-center">
+                    <div className="relative w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
                       <Bot className="w-3.5 h-3.5" />
+                      <div className="absolute inset-0 bg-primary rounded-full blur-md opacity-50 -z-10 hero-glow-pulse" />
                     </div>
-                    <div className="bg-muted border border-border/60 rounded-sm p-3 flex items-center gap-2">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <div className="bg-card/80 border border-foreground/10 backdrop-blur-sm rounded-2xl px-4 py-3 flex items-center gap-2">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
                       <span className="text-xs font-mono tracking-wider text-muted-foreground">חושב...</span>
                     </div>
                   </div>
@@ -244,20 +241,20 @@ const AIChat = () => {
                 <div ref={messagesEndRef} />
               </div>
             </ScrollArea>
-            <div className="border-t p-4">
+            <div className="border-t border-foreground/10 p-4">
               <div className="flex gap-2">
                 <Textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyPress}
                   placeholder="שאל שאלה... (Enter לשליחה, Shift+Enter לשורה חדשה)"
-                  className="min-h-[50px] sm:min-h-[60px] resize-none"
+                  className="min-h-[50px] sm:min-h-[60px] resize-none bg-background/40 border-foreground/15 focus-visible:border-primary focus-visible:ring-primary/20 rounded-xl"
                   disabled={loading}
                 />
                 <Button
                   onClick={handleSend}
                   disabled={!input.trim() || loading}
-                  className="self-end"
+                  className="self-end rounded-full w-12 h-12 p-0 glow-coral hover:scale-105 transition-all"
                 >
                   {loading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />

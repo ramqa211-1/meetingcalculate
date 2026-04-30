@@ -4,6 +4,7 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
 import Layout from '@/components/Layout';
+import PageMasthead from '@/components/PageMasthead';
 import KPICard from '@/components/dashboard/KPICard';
 import AIInsightsCard from '@/components/dashboard/AIInsightsCard';
 import { useEmploymentContext } from '@/hooks/use-employment-context';
@@ -36,13 +37,13 @@ interface Event {
   source: string;
 }
 
-// Editorial financial palette — earthy, warm, distinctive
+// Cinematic coral-led palette
 const COLORS = [
-  'hsl(9 65% 32%)',   // oxblood
-  'hsl(155 35% 26%)', // forest
-  'hsl(32 70% 38%)',  // mustard
-  'hsl(200 35% 30%)', // deep teal
-  'hsl(25 35% 25%)',  // cocoa
+  'hsl(13 73% 64%)',  // coral
+  'hsl(9 60% 50%)',   // deep coral
+  'hsl(32 80% 60%)',  // amber
+  'hsl(145 45% 55%)', // mint
+  'hsl(355 60% 55%)', // crimson
 ];
 
 const Reports = () => {
@@ -152,31 +153,23 @@ const Reports = () => {
   return (
     <Layout>
       <div className="space-y-8 md:space-y-10">
-        <header className="border-b border-foreground/15 pb-6 md:pb-8">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-            <div>
-              <div className="eyebrow-lg mb-3 flex items-center gap-3">
-                <span>דוח רבעוני</span>
-                <span className="h-px w-8 bg-foreground/40" />
-                <span className="font-mono tabular-nums">§ Reports</span>
-                {isAdmin && (
-                  <span className="inline-flex items-center gap-1 border border-primary/40 text-primary px-2 py-0.5 text-[10px] tracking-[0.2em] uppercase">
-                    <Shield className="w-3 h-3" />
-                    אדמין
-                  </span>
-                )}
-              </div>
-              <h1 className="font-serif text-4xl md:text-6xl leading-[1.05] text-foreground">
-                דוח חודשי
-              </h1>
-              <p className="mt-3 text-sm md:text-base text-muted-foreground max-w-md leading-relaxed">
-                {format(new Date(), 'MMMM yyyy', { locale: he })}
-                {isAdmin && ' · כל האירועים במערכת'}
-              </p>
-            </div>
+        <PageMasthead
+          eyebrow="דוח חודשי"
+          marker="§ Reports"
+          headlineLight="דוח"
+          headlineAccent={`${format(new Date(), 'MMMM', { locale: he })}.`}
+          description={`${format(new Date(), 'yyyy', { locale: he })}${isAdmin ? ' · כל האירועים במערכת' : ''}`}
+          meta={
+            isAdmin ? (
+              <span className="inline-flex items-center gap-1 text-primary">
+                <Shield className="w-3 h-3" /> Admin
+              </span>
+            ) : undefined
+          }
+          actions={
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 rounded-sm font-mono text-xs tracking-wider uppercase">
+                <Button variant="outline" size="sm" className="gap-2 rounded-full font-mono text-xs tracking-wider uppercase border-foreground/15 hover:border-primary/40 hover:text-primary">
                   <Download className="w-3.5 h-3.5" />
                   ייצוא
                 </Button>
@@ -190,8 +183,8 @@ const Reports = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          </div>
-        </header>
+          }
+        />
 
         <AIInsightsCard
           events={events}
@@ -259,7 +252,7 @@ const Reports = () => {
                     labelStyle={{ color: 'hsl(var(--foreground))' }}
                   />
                   <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                  <Bar dataKey="revenue" fill="hsl(9 65% 32%)" name="הכנסה" />
+                  <Bar dataKey="revenue" fill="hsl(13 73% 64%)" name="הכנסה" />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>

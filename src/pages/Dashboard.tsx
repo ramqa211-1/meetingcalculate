@@ -4,6 +4,7 @@ import { collection, query, orderBy, getDocs, deleteDoc, doc, updateDoc } from '
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
 import Layout from '@/components/Layout';
+import PageMasthead from '@/components/PageMasthead';
 import KPICard from '@/components/dashboard/KPICard';
 import EventsTable from '@/components/dashboard/EventsTable';
 import AddEventDialog from '@/components/dashboard/AddEventDialog';
@@ -231,78 +232,69 @@ const Dashboard = () => {
   <>
     <Layout>
       <div className="space-y-8 md:space-y-12 py-2">
-        {/* Editorial masthead */}
-        <header className="border-b border-foreground/15 pb-6 md:pb-8">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-            <div>
-              <div className="eyebrow-lg mb-3 flex items-center gap-3">
-                <span>דו״ח רבעוני</span>
-                <span className="h-px w-8 bg-foreground/40" />
-                <span className="font-mono tabular-nums">{format(new Date(), 'yyyy', { locale: he })}</span>
-                {isAdmin && (
-                  <>
-                    <span className="h-px w-8 bg-foreground/40" />
-                    <span className="inline-flex items-center gap-1 text-primary normal-case tracking-normal text-[11px]">
-                      <Shield className="w-3 h-3" />
-                      Admin
-                    </span>
-                  </>
-                )}
-              </div>
-              <h1 className="font-serif text-4xl md:text-6xl leading-[1.05] text-foreground">
-                לוח הבקרה
-              </h1>
-              <p className="mt-3 text-sm md:text-base text-muted-foreground max-w-md leading-relaxed">
-                {isAdmin
-                  ? 'סקירה מלאה של כל הפגישות וההכנסות במערכת'
-                  : 'סקירה מלאה של הפגישות וההכנסות שלך'}
-              </p>
+        <PageMasthead
+          eyebrow="דו״ח רבעוני"
+          marker={`§ ${format(new Date(), 'yyyy', { locale: he })}`}
+          headlineLight="לוח"
+          headlineAccent="הבקרה."
+          description={
+            isAdmin
+              ? 'סקירה מלאה של כל הפגישות וההכנסות במערכת'
+              : 'סקירה מלאה של הפגישות וההכנסות שלך'
+          }
+          meta={
+            isAdmin ? (
+              <span className="inline-flex items-center gap-1 text-primary">
+                <Shield className="w-3 h-3" /> Admin
+              </span>
+            ) : undefined
+          }
+          actions={
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="gap-2 rounded-full font-mono text-xs tracking-wider uppercase border-foreground/15 hover:border-primary/40 hover:text-primary">
+                    <Download className="w-3.5 h-3.5" />
+                    ייצוא
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => exportToJSON(filteredEvents, `events-${rangeMode}`)}>
+                    JSON ({rangeLabel})
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => exportToCSV(filteredEvents as Record<string, unknown>[], `events-${rangeMode}`)}>
+                    CSV ({rangeLabel})
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => exportToJSON(events, 'events-all')}>
+                    JSON (כל ההיסטוריה)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => exportToCSV(events as Record<string, unknown>[], 'events-all')}>
+                    CSV (כל ההיסטוריה)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <AddEventDialog
+                editEvent={editingEvent}
+                onEditComplete={handleEditComplete}
+                onEventAdded={fetchEvents}
+              />
             </div>
-          <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                  <Download className="w-4 h-4" />
-                  ייצוא נתונים
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => exportToJSON(filteredEvents, `events-${rangeMode}`)}>
-                  JSON ({rangeLabel})
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => exportToCSV(filteredEvents as Record<string, unknown>[], `events-${rangeMode}`)}>
-                  CSV ({rangeLabel})
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => exportToJSON(events, 'events-all')}>
-                  JSON (כל ההיסטוריה)
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => exportToCSV(events as Record<string, unknown>[], 'events-all')}>
-                  CSV (כל ההיסטוריה)
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <AddEventDialog
-              editEvent={editingEvent}
-              onEditComplete={handleEditComplete}
-              onEventAdded={fetchEvents}
-            />
-          </div>
-          </div>
-        </header>
+          }
+        />
 
-        {/* Range selector — editorial pill row */}
+        {/* Range selector — coral pill row */}
         <div className="flex flex-col items-center gap-4">
-          <div className="eyebrow">תקופת צפייה</div>
+          <div className="text-[10px] tracking-[0.3em] uppercase font-mono text-muted-foreground">תקופת צפייה</div>
           <ToggleGroup
             type="single"
             value={rangeMode}
             onValueChange={(v) => v && setRangeMode(v as RangeMode)}
-            className="bg-card border border-border rounded-sm divide-x divide-border/70 [&>*]:rounded-none [&>*:first-child]:rounded-r-sm [&>*:last-child]:rounded-l-sm"
+            className="bg-card/60 backdrop-blur-sm border border-foreground/10 rounded-full p-1 gap-1"
           >
-            <ToggleGroupItem value="month" className="px-3 sm:px-5 text-xs sm:text-sm font-medium data-[state=on]:bg-foreground data-[state=on]:text-background">חודש</ToggleGroupItem>
-            <ToggleGroupItem value="quarter" className="px-3 sm:px-5 text-xs sm:text-sm font-medium data-[state=on]:bg-foreground data-[state=on]:text-background">3 חודשים</ToggleGroupItem>
-            <ToggleGroupItem value="half" className="px-3 sm:px-5 text-xs sm:text-sm font-medium data-[state=on]:bg-foreground data-[state=on]:text-background">חצי שנה</ToggleGroupItem>
-            <ToggleGroupItem value="year" className="px-3 sm:px-5 text-xs sm:text-sm font-medium data-[state=on]:bg-foreground data-[state=on]:text-background">שנה</ToggleGroupItem>
+            <ToggleGroupItem value="month" className="rounded-full px-4 text-xs sm:text-sm font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all">חודש</ToggleGroupItem>
+            <ToggleGroupItem value="quarter" className="rounded-full px-4 text-xs sm:text-sm font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all">3 חודשים</ToggleGroupItem>
+            <ToggleGroupItem value="half" className="rounded-full px-4 text-xs sm:text-sm font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all">חצי שנה</ToggleGroupItem>
+            <ToggleGroupItem value="year" className="rounded-full px-4 text-xs sm:text-sm font-medium data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all">שנה</ToggleGroupItem>
           </ToggleGroup>
 
           {rangeMode === 'month' ? (

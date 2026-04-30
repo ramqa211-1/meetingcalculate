@@ -40,20 +40,30 @@ const Layout = ({ children }: LayoutProps) => {
   ];
 
   return (
-    <div className="min-h-screen" dir="rtl">
-      {/* Editorial masthead nav */}
-      <nav className="bg-card/95 backdrop-blur-sm border-b border-border sticky top-0 z-50">
+    <div className="min-h-screen relative" dir="rtl">
+      {/* Cinematic atmospheric backdrop — fixed across all pages */}
+      <div
+        aria-hidden
+        className="fixed inset-0 pointer-events-none -z-10"
+        style={{
+          background:
+            'radial-gradient(1400px 700px at 18% -8%, hsl(13 73% 50% / 0.10) 0%, transparent 60%), radial-gradient(1100px 600px at 95% 110%, hsl(9 60% 36% / 0.14) 0%, transparent 55%)',
+        }}
+      />
+      {/* Top nav — dark glass + coral pulse */}
+      <nav className="bg-background/70 backdrop-blur-xl border-b border-foreground/10 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 md:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4 md:gap-10">
               <Link to="/dashboard" className="flex items-center gap-3 group">
-                <div className="w-9 h-9 bg-foreground rounded-sm flex items-center justify-center transition-transform group-hover:rotate-3">
-                  <Calendar className="w-4 h-4 text-background" strokeWidth={2.5} />
+                <div className="relative w-9 h-9 bg-primary rounded-sm flex items-center justify-center transition-all group-hover:scale-105">
+                  <Calendar className="w-4 h-4 text-primary-foreground" strokeWidth={2.5} />
+                  <div className="absolute inset-0 bg-primary rounded-sm blur-md opacity-50 -z-10 group-hover:opacity-80 transition-opacity" />
                 </div>
                 <div className="leading-none">
                   <div className="font-serif text-base md:text-lg text-foreground tracking-tight">מערכת ניהול</div>
-                  <div className="text-[9px] tracking-[0.25em] uppercase text-muted-foreground mt-0.5 hidden md:block">
-                    Business Quarterly
+                  <div className="text-[9px] tracking-[0.3em] uppercase text-primary mt-0.5 hidden md:block font-mono">
+                    Business · MMXXVI
                   </div>
                 </div>
               </Link>
@@ -103,7 +113,7 @@ const Layout = ({ children }: LayoutProps) => {
                 </SheetContent>
               </Sheet>
 
-              <div className="hidden md:flex items-center gap-1">
+              <div className="hidden md:flex items-center gap-0.5">
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = location.pathname === item.path;
@@ -119,7 +129,10 @@ const Layout = ({ children }: LayoutProps) => {
                         <Icon className="w-3.5 h-3.5" strokeWidth={isActive ? 2.5 : 2} />
                         {item.label}
                         {isActive && (
-                          <span className="absolute bottom-0 left-2 right-2 h-[2px] bg-foreground" />
+                          <>
+                            <span className="absolute bottom-0 left-2 right-2 h-[2px] bg-primary" />
+                            <span className="absolute bottom-0 left-2 right-2 h-[2px] bg-primary blur-sm opacity-70" />
+                          </>
                         )}
                       </button>
                     </Link>
@@ -131,7 +144,7 @@ const Layout = ({ children }: LayoutProps) => {
 
             <button
               onClick={handleLogout}
-              className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
+              className="hidden md:flex items-center gap-1.5 text-[11px] tracking-[0.2em] uppercase font-mono text-muted-foreground hover:text-primary transition-colors px-2 py-1"
             >
               <LogOut className="w-3.5 h-3.5" />
               התנתק

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import Layout from '@/components/Layout';
+import PageMasthead from '@/components/PageMasthead';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -117,36 +118,26 @@ const Invoices = () => {
   return (
     <Layout>
       <div className="space-y-8 md:space-y-10">
-        <header className="border-b border-foreground/15 pb-6 md:pb-8">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-            <div>
-              <div className="eyebrow-lg mb-3 flex items-center gap-3">
-                <span>תיק חשבוניות</span>
-                <span className="h-px w-8 bg-foreground/40" />
-                <span className="font-mono tabular-nums">§ Ledger</span>
-                <span className="font-mono tabular-nums text-muted-foreground">
-                  · {invoices.length.toString().padStart(3, '0')}
-                </span>
-              </div>
-              <h1 className="font-serif text-4xl md:text-6xl leading-[1.05] text-foreground">
-                חשבוניות ומסמכים
-              </h1>
-              <p className="mt-3 text-sm md:text-base text-muted-foreground max-w-md leading-relaxed">
-                הפקה, ניהול וביטול של חשבוניות, קבלות ומסמכים עסקיים — חתום ומאומת
-              </p>
-            </div>
-            <div className="self-start md:self-end">
-              <CreateInvoiceDialog onCreated={handleCreated} />
-            </div>
-          </div>
-        </header>
+        <PageMasthead
+          eyebrow="תיק חשבוניות"
+          marker="§ Ledger"
+          headlineLight="חשבוניות"
+          headlineAccent="ומסמכים."
+          description="הפקה, ניהול וביטול של חשבוניות, קבלות ומסמכים עסקיים — חתום ומאומת"
+          meta={<span className="font-mono tabular-nums">{invoices.length.toString().padStart(3, '0')}</span>}
+          actions={<CreateInvoiceDialog onCreated={handleCreated} />}
+        />
 
         {!businessProfile?.osek_id && (
-          <div className="border-r-2 border-primary bg-primary/5 px-4 py-3 text-sm text-foreground/85">
-            <span className="eyebrow text-primary mb-1 block">דרושה השלמה</span>
+          <div className="relative bg-card/60 backdrop-blur-sm border border-primary/30 rounded-xl px-5 py-4 text-sm text-foreground/85 overflow-hidden">
+            <div className="absolute right-0 top-0 bottom-0 w-1 bg-primary" />
+            <div className="absolute right-0 top-0 bottom-0 w-1 bg-primary blur-sm opacity-60" />
+            <span className="text-[10px] tracking-[0.3em] uppercase font-mono text-primary mb-1.5 block">
+              דרושה השלמה
+            </span>
             לפני הפקת חשבונית, מלא את{' '}
             <button
-              className="underline underline-offset-2 font-medium hover:text-primary"
+              className="underline underline-offset-2 font-medium text-primary hover:text-primary/80 transition-colors"
               onClick={() => navigate('/settings')}
             >
               פרטי העסק בהגדרות

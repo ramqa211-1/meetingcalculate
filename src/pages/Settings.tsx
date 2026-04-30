@@ -7,6 +7,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
 import Layout from '@/components/Layout';
+import PageMasthead from '@/components/PageMasthead';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -290,19 +291,13 @@ const Settings = () => {
   return (
     <Layout>
       <div className="max-w-4xl space-y-8 md:space-y-10">
-        <header className="border-b border-foreground/15 pb-6 md:pb-8">
-          <div className="eyebrow-lg mb-3 flex items-center gap-3">
-            <span>פרופיל וקונפיגורציה</span>
-            <span className="h-px w-8 bg-foreground/40" />
-            <span className="font-mono tabular-nums">§ Settings</span>
-          </div>
-          <h1 className="font-serif text-4xl md:text-6xl leading-[1.05] text-foreground">
-            הגדרות
-          </h1>
-          <p className="mt-3 text-sm md:text-base text-muted-foreground max-w-md leading-relaxed">
-            נהל את הפרטים האישיים, התמחור וההעדפות העסקיות שלך
-          </p>
-        </header>
+        <PageMasthead
+          eyebrow="פרופיל וקונפיגורציה"
+          marker="§ Settings"
+          headlineLight="הגדרות"
+          headlineAccent="ופרטים."
+          description="נהל את הפרטים האישיים, התמחור וההעדפות העסקיות שלך"
+        />
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -585,9 +580,11 @@ const Settings = () => {
                     />
                   </div>
                 </div>
-                <div className="border-r-2 border-primary bg-primary/5 px-4 py-3 text-sm text-foreground/85">
-                  <span className="eyebrow text-primary mb-1 block">סטטוס מס</span>
-                  <strong className="font-serif">עוסק פטור</strong> — החשבוניות לא יכללו מע"מ. המסמכים יסומנו "פטור ממע"מ".
+                <div className="relative bg-card/60 backdrop-blur-sm border border-primary/30 rounded-xl px-5 py-4 text-sm text-foreground/85 overflow-hidden">
+                  <div className="absolute right-0 top-0 bottom-0 w-1 bg-primary" />
+                  <div className="absolute right-0 top-0 bottom-0 w-1 bg-primary blur-sm opacity-60" />
+                  <span className="text-[10px] tracking-[0.3em] uppercase font-mono text-primary mb-1.5 block">סטטוס מס</span>
+                  <strong className="font-serif text-base">עוסק פטור</strong> — החשבוניות לא יכללו מע"מ. המסמכים יסומנו "פטור ממע"מ".
                 </div>
                 <Button
                   type="button"
